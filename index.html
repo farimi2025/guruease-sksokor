@@ -1189,18 +1189,32 @@ function showRPHDetailById(id){
   S._curRPH=r;const k=S.kelas.find(x=>x.id===r.kelas_id);
   const acts=Array.isArray(r.aktiviti)?r.aktiviti:[];
   q('#rphm-title').textContent=r.tajuk;
-  q('#rphm-body').innerHTML=`
-    <div class="irow"><span class="ik">Subjek</span><span class="iv">${esc(r.subjek)}</span></div>
-    <div class="irow"><span class="ik">Kelas</span><span class="iv">${esc(k?.nama||'–')}</span></div>
-    <div class="irow"><span class="ik">Tarikh</span><span class="iv">${fmtDate(r.tarikh)} (${HARI_MY[new Date(r.tarikh+'T00:00:00').getDay()]||''})</span></div>
-    <div class="irow"><span class="ik">Masa</span><span class="iv">${r.masa_mula||'–'} – ${r.masa_tamat||'–'}</span></div>
-    ${r.objektif?`<div class="irow"><span class="ik">Objektif</span><span class="iv">${esc(r.objektif)}</span></div>`:''}
-    <hr class="dv">
-    <p style="font-size:11px;font-weight:700;color:var(--m);margin-bottom:8px">LANGKAH PENGAJARAN</p>
-    ${(()=>{const isJ=r.mod==='jawi';const rS=isJ?'direction:rtl;text-align:right;font-family:\"Traditional Arabic\",\"Scheherazade New\",Arial,sans-serif;':'';return acts.map(a=>`<div class="rph-ak" style="${rS}"><h4>${esc(a.fasa||'')}</h4><p>${esc(a.aktiviti||'')}</p>${a.catatan?`<p style="font-size:11px;color:var(--m);margin-top:2px">${esc(a.catatan)}</p>`:''}</div>`).join('');})()}
-    ${(r.mod==='jawi'||r.mod==='en')?`<div style="margin-top:10px;text-align:center"><button class="btn" style="font-size:11px;padding:6px 14px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1" onclick="toggleRPHBMView(this)">🔄 Lihat BM Rumi (Untuk GB)</button></div>`:''}
-    ${r.refleksi?`<hr class="dv"><div class="irow"><span class="ik">Refleksi</span><span class="iv">${esc(r.refleksi)}</span></div>`:''}
-    ${r.ulasan_gb?`<div class="sk-ulasan">💬 Ulasan GB: ${esc(r.ulasan_gb)}</div>`:''}`;
+  // Build acts HTML without nested template literals
+  const isJawi=r.mod==='jawi';
+  const rtlSt=isJawi?'direction:rtl;text-align:right;font-family:Arial,sans-serif;':'';
+  let actsHtml='';
+  acts.forEach(a=>{
+    actsHtml+='<div class="rph-ak"'+(rtlSt?' style="'+rtlSt+'"':'')+'>'+
+      '<h4>'+esc(a.fasa||'')+'</h4>'+
+      '<p>'+esc(a.aktiviti||'')+'</p>'+
+      (a.catatan?'<p style="font-size:11px;color:var(--m);margin-top:2px">'+esc(a.catatan)+'</p>':'')+
+      '</div>';
+  });
+  const toggleBtn=(r.mod==='jawi'||r.mod==='en')?
+    '<div style="margin-top:10px;text-align:center"><button class="btn" style="font-size:11px;padding:6px 14px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1" onclick="toggleRPHBMView(this)">&#x1F504; Lihat BM Rumi (Untuk GB)</button></div>':'';
+  const objHtml=r.objektif?'<div class="irow"><span class="ik">Objektif</span><span class="iv">'+esc(r.objektif)+'</span></div>':'';
+  const refHtml=r.refleksi?'<hr class="dv"><div class="irow"><span class="ik">Refleksi</span><span class="iv">'+esc(r.refleksi)+'</span></div>':'';
+  const ulHtml=r.ulasan_gb?'<div class="sk-ulasan">&#x1F4AC; Ulasan GB: '+esc(r.ulasan_gb)+'</div>':'';
+  const hari=HARI_MY[new Date(r.tarikh+'T00:00:00').getDay()]||'';
+  q('#rphm-body').innerHTML=
+    '<div class="irow"><span class="ik">Subjek</span><span class="iv">'+esc(r.subjek)+'</span></div>'+
+    '<div class="irow"><span class="ik">Kelas</span><span class="iv">'+esc(k?.nama||'–')+'</span></div>'+
+    '<div class="irow"><span class="ik">Tarikh</span><span class="iv">'+fmtDate(r.tarikh)+' ('+hari+')</span></div>'+
+    '<div class="irow"><span class="ik">Masa</span><span class="iv">'+(r.masa_mula||'–')+' – '+(r.masa_tamat||'–')+'</span></div>'+
+    objHtml+
+    '<hr class="dv">'+
+    '<p style="font-size:11px;font-weight:700;color:var(--m);margin-bottom:8px">LANGKAH PENGAJARAN</p>'+
+    actsHtml+toggleBtn+refHtml+ulHtml;
   q('#rphm').classList.remove('hidden');
 }
 function closeRPHModal(){q('#rphm').classList.add('hidden');S._curRPH=null;}
