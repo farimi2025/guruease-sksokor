@@ -2326,12 +2326,20 @@ async function doJanaRPT(semula=false){
   hov('Fasa 1: Memuatkan DSKP & Takwim...');
   const tahun=getKelasYear(kId);
   const ck=tahun+'-'+subj;
-  if(!dskpCache[ck]){const{data:dsk}=await db.from('dskp').select('*').eq('subjek',subj).eq('tahun',tahun).order('minggu_mula');dskpCache[ck]=dsk||[];}
+  if(!dskpCache[ck]){const{data:dsk}=await db.from('dskp').select('*').eq('subjek',subj).eq('tahun',tahun).order('sp_kod');dskpCache[ck]=dsk||[];}
   const dskp=dskpCache[ck];
   const{data:takwim}=await db.from('takwim').select('tarikh,jenis,penerangan').gte('tarikh','2026-01-01').lte('tarikh','2026-12-31');
   const cutiDates=new Set((takwim||[]).filter(t=>t.jenis!=='sekolah').map(t=>t.tarikh.slice(0,10)));
   const cutiNames={};(takwim||[]).filter(t=>t.jenis!=='sekolah').forEach(t=>{cutiNames[t.tarikh.slice(0,10)]=t.penerangan;});
   const jamMg=JAM_SEMINGGU[subj]||3;
+  // Auto-agih SP merentasi minggu akademik (jika tiada minggu_mula/minggu_tamat dalam data)
+  const hasMingguData=dskp.some(d=>d.minggu_mula!=null);
+  const EST_AK=30;
+  const _spDist={};
+  if(!hasMingguData&&dskp.length>0){
+    const chunk=Math.max(1,Math.ceil(dskp.length/EST_AK));
+    for(let w=1;w<=EST_AK;w++){const s=(w-1)*chunk;_spDist[w]=dskp.slice(s,s+chunk);}
+  }
   hov('Fasa 2: Membina RPT 43 minggu...');
   // Upsert rpt_master
   // FIX G: upsert tanpa .select() — pisah dari SELECT (elak 403)
@@ -2358,7 +2366,7 @@ async function doJanaRPT(semula=false){
     const bukanAk=cutiCount>=3;
     const penggal=getPenggal(wStartStr);
     if(!bukanAk)akWeek++;
-    const matchSP=dskp.filter(d=>d.minggu_mula<=akWeek&&d.minggu_tamat>=akWeek);
+    const matchSP=hasMingguData?dskp.filter(d=>d.minggu_mula<=akWeek&&d.minggu_tamat>=akWeek):(_spDist[akWeek]||[]);
     const tema=matchSP[0]?.tema||'';
     const skMap={};matchSP.forEach(d=>{if(d.sk_kod&&!skMap[d.sk_kod])skMap[d.sk_kod]={kod:d.sk_kod,tajuk:d.sk_tajuk||''};});
     const sk=Object.values(skMap);
