@@ -211,6 +211,8 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
 .rli-btn{border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .rli-btn:active{opacity:.7}
 /* RPT */
+.rpt-penggal-hdr{background:linear-gradient(135deg,#1d4ed8,#6d28d9);color:#fff;padding:10px 14px;border-radius:10px;margin:14px 0 8px;font-size:12px;font-weight:700;letter-spacing:.3px;cursor:pointer}
+.dark .rpt-penggal-hdr{opacity:.9}
 .rpt-week{background:var(--s);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh);border-left:5px solid var(--b);transition:all .2s;position:relative}
 .rpt-week.ak-ok{border-left-color:var(--p)}
 .rpt-week.ak-done{border-left-color:var(--g)}
@@ -2172,11 +2174,64 @@ async function toggleMuridAktif(id,aktif){
   toast(aktif?'Murid diaktifkan.':'Murid dinyahaktifkan.','ok');loadMuridList();
 }
 
-// ── RPT MODULE — PERSISTENT RPT ENGINE ────────────────────────
-// Generate Once · Store Forever · Read Fast · Update Incrementally
+// ── RPT MODULE — PERSISTENT RPT ENGINE (SOP 2026) ──────────────
+// Fasa 1: Data · Fasa 2: Bina · Fasa 3: Format KPM · Fasa 4: Pengesahan
 
 const HARI_BUKAN_AK=['Minggu Sukan','Minggu Apresiasi','Minggu Peperiksaan','Ujian Bulanan','Program Sekolah','Lain-lain'];
-let _rptMasterId=null;// current rpt_master.id
+
+// ── Penggal 2026 (Kelantan / Kumpulan A) ───────────────────
+// Penggal 1: 12 Jan – 20 Mac (Mg 1-10)  [then Raya break]
+// Penggal 1B: 13 Apr – 22 Mei (Mg 11-19) [after Raya, before mid-year]
+// Penggal 2: 6 Jul – 28 Ogos (Mg 20-32)
+// Penggal 3: 7 Sept – 13 Nov (Mg 33-43)
+function getPenggal(tarikhMula){
+  const d=new Date(tarikhMula+'T00:00:00');const m=d.getMonth()+1;const day=d.getDate();
+  if(m===1||(m===2)||(m===3&&day<=20))return 1;
+  if((m===3&&day>20)||m===4||(m===5&&day<=22))return 1;// Penggal 1 sambungan (after Raya)
+  if(m>=7&&m<=8)return 2;
+  if(m>=9)return 3;
+  return 0;// cuti
+}
+const PENGGAL_LABEL={1:'Penggal 1 (Jan – Mei)',2:'Penggal 2 (Jul – Ogos)',3:'Penggal 3 (Sept – Nov)'};
+
+// ── EMK (Elemen Merentas Kurikulum) ────────────────────────
+const EMK_SUBJ={
+  'Bahasa Melayu':['Nilai Murni','Kreativiti dan Inovasi','Bahasa'],
+  'Bahasa Inggeris':['Nilai Murni','Kreativiti dan Inovasi','TMK','Bahasa'],
+  'Matematik':['Kreativiti dan Inovasi','Sains dan Teknologi','TMK'],
+  'Sains':['Sains dan Teknologi','Kelestarian Alam Sekitar','Kreativiti dan Inovasi','TMK'],
+  'Dunia Sains dan Teknologi':['Sains dan Teknologi','TMK','Kreativiti dan Inovasi'],
+  'Pendidikan Islam':['Nilai Murni','Patriotisme'],
+  'j-QAF / Tasmik':['Nilai Murni','Patriotisme','Bahasa'],
+  'Bahasa Arab':['Nilai Murni','Bahasa','TMK'],
+  'Sejarah':['Patriotisme','Nilai Murni','Kreativiti dan Inovasi'],
+  'Reka Bentuk dan Teknologi':['Kreativiti dan Inovasi','Keusahawanan','TMK','Sains dan Teknologi'],
+  'Pendidikan Seni Visual':['Kreativiti dan Inovasi','Nilai Murni'],
+  'Pendidikan Muzik':['Kreativiti dan Inovasi','Nilai Murni','Patriotisme'],
+  'Pendidikan Jasmani':['Nilai Murni','Patriotisme','Keusahawanan'],
+  'Pendidikan Kesihatan':['Nilai Murni','Kelestarian Alam Sekitar']
+};
+function getEMK(subjek,spTajuk){
+  const base=EMK_SUBJ[subjek]||['Nilai Murni','Kreativiti dan Inovasi'];
+  const t=(spTajuk||'').toLowerCase();
+  const extra=[];
+  if(t.includes('alam')||t.includes('lestari'))extra.push('Kelestarian Alam Sekitar');
+  if(t.includes('digital')||t.includes('komputer')||t.includes('teknologi'))extra.push('TMK');
+  if(t.includes('niaga')||t.includes('usaha'))extra.push('Keusahawanan');
+  if(t.includes('negara')||t.includes('bangsa')||t.includes('patriot'))extra.push('Patriotisme');
+  const all=[...new Set([...base,...extra])];
+  return all.slice(0,4).join(', ');
+}
+
+// ── Minimum teaching hours per subject per week ─────────────
+const JAM_SEMINGGU={
+  'Bahasa Melayu':6,'Bahasa Inggeris':5,'Matematik':5,'Sains':3,
+  'Pendidikan Islam':3,'j-QAF / Tasmik':2,'Bahasa Arab':2,'Sejarah':2,
+  'Reka Bentuk dan Teknologi':2,'Pendidikan Seni Visual':1,'Pendidikan Muzik':1,
+  'Pendidikan Jasmani':2,'Pendidikan Kesihatan':1,'Dunia Sains dan Teknologi':3
+};
+
+let _rptMasterId=null;
 
 function onRPTKelasChange(){
   const kId=q('#rpt-kelas').value;const tahun=getKelasYear(kId);
@@ -2187,7 +2242,7 @@ function onRPTKelasChange(){
   q('#rpt-counter')?.classList.add('hidden');q('#rpt-hint-bar')?.classList.add('hidden');
 }
 
-// ── Check if RPT exists in DB ───────────────────────────────
+// ── Fasa 1: Semak jika RPT wujud ───────────────────────────
 async function semakRPT(){
   const kId=q('#rpt-kelas').value;const subj=q('#rpt-subj').value;
   if(!kId||!subj){
@@ -2196,19 +2251,18 @@ async function semakRPT(){
     return;
   }
   const bar=q('#rpt-status-bar');
-  bar.innerHTML='<div class="sp" style="width:18px;height:18px"></div><div style="font-size:12px;color:var(--m)">Menyemak RPT dalam sistem...</div>';
+  bar.innerHTML='<div class="sp" style="width:18px;height:18px"></div><div style="font-size:12px;color:var(--m)">Menyemak...</div>';
   bar.style.cssText='margin-top:10px;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;background:var(--bg)';
   bar.classList.remove('hidden');
-  const tahun=getKelasYear(kId);
   const{data:master}=await db.from('rpt_master').select('*').eq('kelas_id',kId).eq('subjek',subj).eq('tahun',2026).maybeSingle();
   if(master){
     _rptMasterId=master.id;
-    const tarJana=fmtDate(master.tarikh_jana);
+    const jamMg=JAM_SEMINGGU[subj]||3;
     bar.style.cssText='margin-top:10px;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #bbf7d0';
     bar.innerHTML='<div style="font-size:22px">✅</div>'+
       '<div style="flex:1">'+
-      '<div style="font-size:13px;font-weight:700;color:#15803d">RPT Sedia Ada (v'+master.versi+')</div>'+
-      '<div style="font-size:11px;color:#166534;margin-top:2px">Dijana: '+tarJana+' &nbsp;•&nbsp; Kemaskini: '+new Date(master.tarikh_kemaskini).toLocaleDateString('ms-MY')+'</div>'+
+      '<div style="font-size:13px;font-weight:700;color:#15803d">RPT Sedia Ada &nbsp;<span style="font-weight:400;font-size:11px">v'+master.versi+' • Dijana: '+fmtDate(master.tarikh_jana)+'</span></div>'+
+      '<div style="font-size:11px;color:#166534;margin-top:2px">'+esc(subj)+' • '+jamMg+' waktu/minggu • SPI 3/1999 Compliant</div>'+
       '</div>'+
       '<div style="display:flex;gap:6px;flex-shrink:0">'+
       '<button class="btn bo" style="font-size:11px;padding:7px 12px" onclick="doJanaRPT(true)">🔄 Jana Semula</button>'+
@@ -2217,11 +2271,13 @@ async function semakRPT(){
     lihatRPT();
   } else {
     _rptMasterId=null;
+    const tahun=getKelasYear(kId);
+    const jamMg=JAM_SEMINGGU[subj]||3;
     bar.style.cssText='margin-top:10px;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;background:#fffbeb;border:1px solid #fde68a';
     bar.innerHTML='<div style="font-size:22px">📋</div>'+
       '<div style="flex:1">'+
       '<div style="font-size:13px;font-weight:700;color:#92400e">RPT Belum Dijana</div>'+
-      '<div style="font-size:11px;color:#b45309;margin-top:2px">Klik Jana RPT untuk bina RPT 43 minggu bagi '+esc(subj)+' Tahun '+tahun+'</div>'+
+      '<div style="font-size:11px;color:#b45309;margin-top:2px">'+esc(subj)+' Tahun '+tahun+' • '+jamMg+' waktu/minggu • ~'+(40*jamMg)+' waktu setahun</div>'+
       '</div>'+
       '<button class="btn bpur" style="font-size:11px;padding:7px 12px;flex-shrink:0" onclick="doJanaRPT(false)">📅 Jana RPT</button>';
     q('#rpt-list').innerHTML='<div class="empty"><div class="ei">📅</div><p>Jana RPT untuk mula.</p></div>';
@@ -2229,33 +2285,31 @@ async function semakRPT(){
   }
 }
 
-// ── Generate RPT (once, or semula with confirm) ─────────────
+// ── Fasa 2: Jana RPT (Generate Once) ───────────────────────
 async function doJanaRPT(semula=false){
   const kId=q('#rpt-kelas').value;const subj=q('#rpt-subj').value;
   if(!kId){toast('Pilih kelas.','err');return;}
   if(!subj){toast('Pilih mata pelajaran.','err');return;}
-  if(semula&&!confirm('Jana semula RPT ini?\n\nData sedia ada akan digantikan. Tindakan tidak boleh dibatalkan.'))return;
-  hov('Jana RPT 43 minggu...');
+  if(semula&&!confirm('Jana semula RPT?\n\nData sedia ada akan digantikan. Sebarang perubahan manual akan hilang.'))return;
+  hov('Fasa 1: Memuatkan DSKP & Takwim...');
   const tahun=getKelasYear(kId);
-  // Load DSKP
   const ck=tahun+'-'+subj;
   if(!dskpCache[ck]){const{data:dsk}=await db.from('dskp').select('*').eq('subjek',subj).eq('tahun',tahun).order('minggu_mula');dskpCache[ck]=dsk||[];}
   const dskp=dskpCache[ck];
-  // Load Takwim 2026
   const{data:takwim}=await db.from('takwim').select('tarikh,jenis,penerangan').gte('tarikh','2026-01-01').lte('tarikh','2026-12-31');
   const cutiDates=new Set((takwim||[]).filter(t=>t.jenis!=='sekolah').map(t=>t.tarikh.slice(0,10)));
   const cutiNames={};(takwim||[]).filter(t=>t.jenis!=='sekolah').forEach(t=>{cutiNames[t.tarikh.slice(0,10)]=t.penerangan;});
+  const jamMg=JAM_SEMINGGU[subj]||3;
+  hov('Fasa 2: Membina RPT 43 minggu...');
   // Upsert rpt_master
-  const newVersi=semula?(_rptMasterId?2:1):1;
   const{data:master,error:mErr}=await db.from('rpt_master').upsert({
     guru_id:S.user.id,kelas_id:kId,subjek,tahun:2026,tahun_murid:tahun,
-    versi:newVersi,status:'aktif',tarikh_jana:todayStr(),tarikh_kemaskini:new Date().toISOString()
+    versi:semula?2:1,status:'aktif',jam_seminggu:jamMg,
+    tarikh_jana:todayStr(),tarikh_kemaskini:new Date().toISOString()
   },{onConflict:'guru_id,kelas_id,subjek,tahun'}).select().single();
   if(mErr){hov();toast('Ralat: '+mErr.message,'err');return;}
   _rptMasterId=master.id;
-  // Delete existing minggu for this master
   await db.from('rpt_minggu').delete().eq('rpt_id',master.id);
-  // Build 43 weeks
   const schoolStart=new Date('2026-01-05');
   const items=[];let akWeek=0;
   for(let mg=1;mg<=43;mg++){
@@ -2263,86 +2317,114 @@ async function doJanaRPT(semula=false){
     const wEnd=new Date(wStart);wEnd.setDate(wStart.getDate()+4);
     const wStartStr=wStart.toISOString().slice(0,10);
     const wEndStr=wEnd.toISOString().slice(0,10);
-    // Count cuti days Mon-Fri
     let cutiCount=0;let cutiName='';
     for(let d=0;d<5;d++){const dd=new Date(wStart);dd.setDate(wStart.getDate()+d);const ds=dd.toISOString().slice(0,10);if(cutiDates.has(ds)){cutiCount++;if(!cutiName)cutiName=cutiNames[ds]||'Cuti';}}
     const bukanAk=cutiCount>=3;
+    const penggal=getPenggal(wStartStr);
     if(!bukanAk)akWeek++;
-    // Match DSKP entries for this academic week
     const matchSP=dskp.filter(d=>d.minggu_mula<=akWeek&&d.minggu_tamat>=akWeek);
     const tema=matchSP[0]?.tema||'';
-    // Build SK array (unique)
     const skMap={};matchSP.forEach(d=>{if(d.sk_kod&&!skMap[d.sk_kod])skMap[d.sk_kod]={kod:d.sk_kod,tajuk:d.sk_tajuk||''};});
     const sk=Object.values(skMap);
-    // Build SP array
     const sp=matchSP.map(d=>({kod:d.sp_kod||'',tajuk:d.sp_tajuk||'',band:d.band||0}));
-    // Build aktiviti suggestions
-    const aktiviti=sp.length?['Perbincangan kumpulan berkaitan '+esc(sp[0].tajuk).substring(0,50),'Latihan bertulis / lembaran kerja','Pembentangan / demonstrasi murid']:[];
-    // Build objektif
-    const objektif=sp.length?'Murid dapat '+sp.slice(0,2).map(s=>s.tajuk.toLowerCase()).join(' dan ')+'.':(bukanAk?'':'Aktiviti P&P minggu akademik ke-'+akWeek);
-    const tajuk=bukanAk?('['+( cutiName||'Bukan Akademik')+']'):(sp.length?(tema?tema+': '+(sp[0].tajuk||'').substring(0,60):sp[0].tajuk||subj):(subj+' — Minggu Akademik '+akWeek));
-    const evidens=sp.length?'Pemerhatian guru, Lembaran kerja, Soal jawab lisan':'–';
+    const spFirstTajuk=sp[0]?.tajuk||'';
+    const emk=bukanAk?'–':getEMK(subj,spFirstTajuk);
+    const aktiviti=sp.length?[
+      'Perbincangan kumpulan berkaitan '+sp[0].tajuk.substring(0,50),
+      'Latihan bertulis / lembaran kerja',
+      'Soal jawab lisan & pembentangan'
+    ]:[];
+    const objektif=bukanAk?'':sp.length?'Murid dapat '+sp.slice(0,2).map(s=>{const t=s.tajuk.toLowerCase();return t.length>50?t.substring(0,50)+'...':t;}).join(' dan ')+'.':subj+' Minggu Akademik '+akWeek+'.';
+    const evidens=bukanAk?'':sp.length?'Pemerhatian guru, Lembaran kerja, Soal jawab lisan':'–';
+    const tajuk=bukanAk?'[ '+(cutiName||'Bukan Akademik')+' ]':(sp.length?(tema?tema+': '+sp[0].tajuk.substring(0,70):sp[0].tajuk||subj):(subj+' — Minggu Akademik '+akWeek));
+    const catatan=bukanAk?('Catatan: '+(cutiName||'Minggu tidak bersekolah')):'PBD: '+evidens+'\nEMK: '+emk;
     items.push({
-      rpt_id:master.id,minggu_ke:mg,
-      minggu_akademik:bukanAk?null:akWeek,
-      tarikh_mula:wStartStr,tarikh_akhir:wEndStr,
-      bukan_akademik:bukanAk,catatan_bukan_ak:bukanAk?(cutiName||'Minggu cuti'):'',
-      tema,tajuk,sk,sp,aktiviti,objektif,evidens,catatan:'',status:'belum'
+      rpt_id:master.id,minggu_ke:mg,minggu_akademik:bukanAk?null:akWeek,
+      tarikh_mula:wStartStr,tarikh_akhir:wEndStr,penggal:bukanAk?0:penggal,
+      bukan_akademik:bukanAk,catatan_bukan_ak:bukanAk?(cutiName||'Bukan Akademik'):'',
+      tema,tajuk,sk,sp,aktiviti,objektif,evidens,emk,catatan,status:'belum',
+      jam_pdp:bukanAk?0:jamMg
     });
   }
-  // Batch insert rpt_minggu (10 at a time)
+  hov('Fasa 3: Menyimpan ke Supabase...');
   let insertErr=null;
   for(let i=0;i<items.length;i+=10){const{error}=await db.from('rpt_minggu').insert(items.slice(i,i+10));if(error){insertErr=error;break;}}
   hov();
   if(insertErr){toast('Ralat simpan: '+insertErr.message,'err',5000);return;}
-  toast('RPT '+items.length+' minggu berjaya dijana!','ok');
+  const akTotal=items.filter(i=>!i.bukan_akademik).length;
+  const jamTotal=akTotal*jamMg;
+  toast('RPT sijana! '+akTotal+' minggu akademik • ~'+jamTotal+' waktu P&P','ok',4000);
   semakRPT();
 }
 
-// ── Display RPT (read from DB, no regen) ─────────────────────
+// ── Fasa 3: Papar RPT bergroupkan Penggal ──────────────────
 async function lihatRPT(){
-  if(!_rptMasterId){toast('Pilih kelas dan subjek dahulu.','err');return;}
+  if(!_rptMasterId){toast('Pilih kelas dan subjek.','err');return;}
   q('#rpt-list').innerHTML='<div style="text-align:center;padding:20px"><div class="sp"></div></div>';
   const{data}=await db.from('rpt_minggu').select('*').eq('rpt_id',_rptMasterId).order('minggu_ke');
-  if(!data?.length){
-    q('#rpt-list').innerHTML='<div class="empty"><div class="ei">📅</div><p>Tiada data minggu. Cuba jana semula.</p></div>';
-    return;
-  }
+  if(!data?.length){q('#rpt-list').innerHTML='<div class="empty"><div class="ei">📅</div><p>Tiada data. Jana semula RPT.</p></div>';return;}
   _rptUpdateCounter(data);
   const today=todayStr();let akNum=0;
-  q('#rpt-list').innerHTML=data.map(r=>{
-    if(!r.bukan_akademik)akNum++;
-    const isCurrent=r.tarikh_mula&&r.tarikh_akhir&&r.tarikh_mula<=today&&r.tarikh_akhir>=today;
-    const isDone=r.status==='selesai';const isBukan=r.bukan_akademik;
-    const cls='rpt-week'+(isBukan?' bukan-ak':isDone?' ak-done':' ak-ok')+(isCurrent?' minggu-ini':'');
-    const badgeCls='rpt-wbadge'+(isBukan?' bukan':isDone?' done':'');
-    const badgeLbl=isBukan?'–':(isDone?'✓':akNum);
-    const nowBadge=isCurrent?'<span style="background:#fef9c3;color:#854d0e;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px">← MINGGU INI</span>':'';
-    const bukanOpts=HARI_BUKAN_AK.map(o=>'<option value="'+o+'" '+(r.catatan_bukan_ak===o?'selected':'')+'>'+o+'</option>').join('');
-    const bukanSel=isBukan?('<select class="inp" style="margin-top:6px;font-size:11px" onchange="updateCatatanBukanAk(\''+r.id+'\',this.value)"><option value="">-- Jenis --</option>'+bukanOpts+'</select>'):'';
-    const sp=Array.isArray(r.sp)?r.sp:[];const sk=Array.isArray(r.sk)?r.sk:[];
-    const spPreview=sp.slice(0,3).map(s=>s.kod).filter(Boolean).join(', ');
-    const skPreview=sk.slice(0,2).map(s=>s.kod+' '+s.tajuk).join(' • ');
-    return '<div class="'+cls+'" id="rw-'+r.id+'">'+
-      '<div class="rpt-week-hdr">'+
-      '<div class="'+badgeCls+'">'+badgeLbl+'</div>'+
-      '<div class="rpt-week-info">'+
-      '<div class="rpt-wtajuk">'+esc(isBukan?'BUKAN AKADEMIK':(r.tajuk||''))+'</div>'+
-      '<div class="rpt-wmeta">Mg Sek '+r.minggu_ke+(r.minggu_akademik?' &nbsp;•&nbsp; Mg Ak '+r.minggu_akademik:'')+' &nbsp;•&nbsp; '+fmtDate(r.tarikh_mula)+' – '+fmtDate(r.tarikh_akhir)+nowBadge+'</div>'+
-      (r.tema&&!isBukan?'<div class="rpt-wmeta" style="color:var(--pur);margin-top:2px">Tema: '+esc(r.tema)+'</div>':'')+
-      (!isBukan&&skPreview?'<div class="rpt-wmeta" style="margin-top:2px;color:#0369a1">SK: '+esc(skPreview)+'</div>':'')+
-      (!isBukan&&spPreview?'<div class="rpt-wmeta" style="margin-top:1px">SP: '+esc(spPreview)+'</div>':'')+
-      (r.objektif&&!isBukan?'<div class="rpt-wmeta" style="margin-top:2px;font-size:10px;color:#059669">🎯 '+esc(r.objektif.substring(0,80))+'</div>':'')+
-      '</div></div>'+
-      bukanSel+
-      '<div class="rpt-week-acts">'+
-      (isBukan
-        ?'<button class="rpt-wbtn" style="background:#d1fae5;color:#059669" onclick="toggleBukanAk(\''+r.id+'\',false)">✅ Jadikan Akademik</button>'
-        :'<button class="rpt-wbtn" style="background:#fee2e2;color:#dc2626" onclick="toggleBukanAk(\''+r.id+'\',true)">🚫 Bukan Akademik</button>')+
-      (!isBukan&&!isDone?'<button class="rpt-wbtn" style="background:#d1fae5;color:#059669" onclick="markRPTSelesai(\''+r.id+'\')">✅ Selesai</button>':'')+
-      (!isBukan&&isDone?'<span class="rpt-wbtn" style="background:#d1fae5;color:#059669;cursor:default">✅ Selesai</span>':'')+
-      '</div></div>';
-  }).join('');
+  // Group by penggal
+  const groups={};
+  data.forEach(r=>{const p=r.bukan_akademik?'x':String(r.penggal||1);if(!groups[p])groups[p]=[];groups[p].push(r);});
+  let html='';
+  [1,2,3].forEach(pNum=>{
+    const rows=groups[String(pNum)]||[];if(!rows.length)return;
+    html+='<div class="rpt-penggal-hdr">📚 '+esc(PENGGAL_LABEL[pNum]||'Penggal '+pNum)+'</div>';
+    rows.forEach(r=>{
+      if(!r.bukan_akademik)akNum++;
+      const isCurrent=r.tarikh_mula&&r.tarikh_akhir&&r.tarikh_mula<=today&&r.tarikh_akhir>=today;
+      const isDone=r.status==='selesai';const isBukan=r.bukan_akademik;
+      const cls='rpt-week'+(isDone?' ak-done':' ak-ok')+(isCurrent?' minggu-ini':'');
+      const badgeCls='rpt-wbadge'+(isDone?' done':'');
+      const nowBadge=isCurrent?'<span style="background:#fef9c3;color:#854d0e;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px">← MINGGU INI</span>':'';
+      const sp=Array.isArray(r.sp)?r.sp:[];const sk=Array.isArray(r.sk)?r.sk:[];
+      const skPreview=sk.slice(0,2).map(s=>s.kod+' '+s.tajuk.substring(0,30)).join(' • ');
+      const spPreview=sp.slice(0,3).map(s=>s.kod).join(', ');
+      html+='<div class="'+cls+'" id="rw-'+r.id+'">'+
+        '<div class="rpt-week-hdr">'+
+        '<div class="'+badgeCls+'">'+akNum+'</div>'+
+        '<div class="rpt-week-info">'+
+        '<div class="rpt-wtajuk">'+esc(r.tajuk||'')+'</div>'+
+        '<div class="rpt-wmeta">Mg Sek '+r.minggu_ke+' &nbsp;•&nbsp; Mg Ak '+akNum+' &nbsp;•&nbsp; '+fmtDate(r.tarikh_mula)+' – '+fmtDate(r.tarikh_akhir)+nowBadge+'</div>'+
+        (r.tema?'<div class="rpt-wmeta" style="color:var(--pur);margin-top:1px">Tema: '+esc(r.tema)+'</div>':'')+
+        (skPreview?'<div class="rpt-wmeta" style="color:#0369a1;margin-top:1px">SK: '+esc(skPreview)+'</div>':'')+
+        (spPreview?'<div class="rpt-wmeta" style="margin-top:1px">SP: '+esc(spPreview)+'</div>':'')+
+        (r.emk&&r.emk!=='–'?'<div class="rpt-wmeta" style="color:#059669;margin-top:1px;font-size:10px">EMK: '+esc(r.emk)+'</div>':'')+
+        (r.objektif?'<div class="rpt-wmeta" style="color:#6d28d9;margin-top:1px;font-size:10px">🎯 '+esc(r.objektif.substring(0,90))+'</div>':'')+
+        '</div></div>'+
+        '<div class="rpt-week-acts">'+
+        '<button class="rpt-wbtn" style="background:#fee2e2;color:#dc2626" onclick="toggleBukanAk(\''+r.id+'\',true)">🚫 Bukan Ak</button>'+
+        (!isDone?'<button class="rpt-wbtn" style="background:#d1fae5;color:#059669" onclick="markRPTSelesai(\''+r.id+'\')">✅ Selesai</button>':
+                 '<span class="rpt-wbtn" style="background:#d1fae5;color:#059669;cursor:default">✅ Selesai</span>')+
+        '</div></div>';
+    });
+  });
+  // Bukan akademik section (collapsed)
+  const bukanRows=groups['x']||[];
+  if(bukanRows.length){
+    html+='<div class="rpt-penggal-hdr" style="background:var(--bg);color:var(--m);border-color:#e2e8f0" onclick="this.nextElementSibling.classList.toggle(\'hidden\')">⏸ Bukan Akademik ('+bukanRows.length+' minggu) — klik untuk buka/tutup ▾</div>';
+    html+='<div class="hidden">';
+    bukanRows.forEach(r=>{
+      const isBukan=r.bukan_akademik;
+      const bukanOpts=HARI_BUKAN_AK.map(o=>'<option value="'+o+'" '+(r.catatan_bukan_ak===o?'selected':'')+'>'+o+'</option>').join('');
+      html+='<div class="rpt-week bukan-ak" id="rw-'+r.id+'">'+
+        '<div class="rpt-week-hdr">'+
+        '<div class="rpt-wbadge bukan">–</div>'+
+        '<div class="rpt-week-info">'+
+        '<div class="rpt-wtajuk">'+esc(r.catatan_bukan_ak||'BUKAN AKADEMIK')+'</div>'+
+        '<div class="rpt-wmeta">Mg Sek '+r.minggu_ke+' &nbsp;•&nbsp; '+fmtDate(r.tarikh_mula)+' – '+fmtDate(r.tarikh_akhir)+'</div>'+
+        '</div></div>'+
+        '<select class="inp" style="font-size:11px;margin:4px 0" onchange="updateCatatanBukanAk(\''+r.id+'\',this.value)">'+
+        '<option value="">-- Jenis --</option>'+bukanOpts+'</select>'+
+        '<div class="rpt-week-acts">'+
+        '<button class="rpt-wbtn" style="background:#d1fae5;color:#059669" onclick="toggleBukanAk(\''+r.id+'\',false)">✅ Jadikan Akademik</button>'+
+        '</div></div>';
+    });
+    html+='</div>';
+  }
+  q('#rpt-list').innerHTML=html;
 }
 
 function _rptUpdateCounter(data){
@@ -2358,95 +2440,141 @@ function _rptUpdateCounter(data){
 async function toggleBukanAk(id,isBukan){
   const{error}=await db.from('rpt_minggu').update({bukan_akademik:isBukan,catatan_bukan_ak:isBukan?'Bukan Akademik':''}).eq('id',id);
   if(error){toast('Ralat: '+error.message,'err');return;}
-  // Update master kemaskini timestamp
   if(_rptMasterId)await db.from('rpt_master').update({tarikh_kemaskini:new Date().toISOString()}).eq('id',_rptMasterId);
   lihatRPT();
 }
-
-async function updateCatatanBukanAk(id,val){
-  await db.from('rpt_minggu').update({catatan_bukan_ak:val}).eq('id',id);
-  if(_rptMasterId)await db.from('rpt_master').update({tarikh_kemaskini:new Date().toISOString()}).eq('id',_rptMasterId);
-}
-
+async function updateCatatanBukanAk(id,val){await db.from('rpt_minggu').update({catatan_bukan_ak:val}).eq('id',id);}
 async function markRPTSelesai(id){
   const{error}=await db.from('rpt_minggu').update({status:'selesai'}).eq('id',id);
   if(error){toast('Ralat: '+error.message,'err');return;}
   lihatRPT();
 }
 
+// ── Fasa 4: Cetak Format KPM SPI 3/1999 ────────────────────
 async function printRPT(){
   const kId=q('#rpt-kelas').value;const subj=q('#rpt-subj').value;
   if(!_rptMasterId){toast('Tiada RPT. Jana dahulu.','err');return;}
-  hov('Menyedia cetakan...');
-  const{data}=await db.from('rpt_minggu').select('*').eq('rpt_id',_rptMasterId).order('minggu_ke');
+  hov('Menyedia cetakan KPM...');
+  const[{data},{data:master}]=await Promise.all([
+    db.from('rpt_minggu').select('*').eq('rpt_id',_rptMasterId).order('minggu_ke'),
+    db.from('rpt_master').select('*').eq('id',_rptMasterId).single()
+  ]);
   hov();
-  if(!data?.length){toast('Tiada data. Jana semula RPT.','err');return;}
-  const k=S.kelas.find(x=>x.id===kId);
-  const tahun=getKelasYear(kId);
-  const akTotal=data.filter(r=>!r.bukan_akademik).length;
-  const bukanTotal=data.filter(r=>r.bukan_akademik).length;
-  let akNum=0;
-  const rows=data.map(r=>{
-    if(!r.bukan_akademik)akNum++;
+  if(!data?.length){toast('Tiada data.','err');return;}
+  const k=S.kelas.find(x=>x.id===kId);const tahun=getKelasYear(kId);
+  const jamMg=JAM_SEMINGGU[subj]||3;
+  const akData=data.filter(r=>!r.bukan_akademik);
+  const jamTotal=akData.length*jamMg;
+  const selesaiTotal=akData.filter(r=>r.status==='selesai').length;
+  // Build rows grouped by penggal
+  let rowsHtml='';let akNum=0;let prevPenggal=0;
+  data.forEach(r=>{
     const isBukan=r.bukan_akademik;const isDone=r.status==='selesai';
-    const rowBg=isBukan?'background:#f8fafc;color:#64748b;':isDone?'background:#f0fdf4;':'';
-    const akCell=isBukan?'<span style="color:#cbd5e1">–</span>':('<strong>'+akNum+'</strong>');
+    if(!isBukan)akNum++;
+    const penggal=isBukan?0:(r.penggal||1);
+    if(!isBukan&&penggal!==prevPenggal){
+      rowsHtml+='<tr style="background:#dbeafe"><td colspan="7" style="padding:6px 10px;font-weight:700;font-size:10px;color:#1d4ed8">'+esc(PENGGAL_LABEL[penggal]||'Penggal '+penggal)+'</td></tr>';
+      prevPenggal=penggal;
+    }
+    const rowBg=isBukan?'background:#f8fafc;color:#94a3b8':isDone?'background:#f0fdf4':'';
     const sp=Array.isArray(r.sp)?r.sp:[];const sk=Array.isArray(r.sk)?r.sk:[];
-    const skCell=sk.map(s=>s.kod).join(', ')||'–';
-    const spCell=sp.slice(0,4).map(s=>s.kod).join(', ')||'–';
-    const tajukCell=isBukan?('<em style="color:#94a3b8">'+(r.catatan_bukan_ak||'Bukan Akademik')+'</em>'):esc(r.tajuk||'–');
-    const objCell=isBukan?'–':esc((r.objektif||'').substring(0,80));
-    const statusCell=isBukan?'<span style="color:#cbd5e1">–</span>':isDone?'<span style="color:#059669;font-weight:700">✓</span>':'<span style="color:#cbd5e1">○</span>';
-    return '<tr style="'+rowBg+'">'+
-      '<td style="text-align:center;white-space:nowrap">'+r.minggu_ke+'</td>'+
-      '<td style="text-align:center">'+akCell+'</td>'+
-      '<td style="white-space:nowrap;font-size:9px">'+fmtDate(r.tarikh_mula)+'<br>'+fmtDate(r.tarikh_akhir)+'</td>'+
-      '<td style="color:#6d28d9;font-size:9px">'+esc(r.tema||'–')+'</td>'+
-      '<td>'+tajukCell+'</td>'+
-      '<td style="font-size:9px;color:#0369a1">'+skCell+'</td>'+
-      '<td style="font-size:9px">'+spCell+'</td>'+
-      '<td style="font-size:9px">'+objCell+'</td>'+
-      '<td style="text-align:center">'+statusCell+'</td></tr>';
-  }).join('');
+    const skCell=isBukan?'–':sk.map(s=>'<strong>'+esc(s.kod)+'</strong> '+esc(s.tajuk)).join('<br>')||'–';
+    const spCell=isBukan?'–':sp.slice(0,5).map(s=>'<span style="color:#0369a1;font-weight:600">'+esc(s.kod)+'</span> '+esc(s.tajuk)).join('<br>')||'–';
+    const catatanCell=isBukan?('<em>'+esc(r.catatan_bukan_ak||'Bukan Akademik')+'</em>'):(
+      (r.emk&&r.emk!=='–'?'<div style="margin-bottom:3px"><strong>EMK:</strong> '+esc(r.emk)+'</div>':'')+
+      (r.evidens?'<div><strong>PBD:</strong> '+esc(r.evidens)+'</div>':'')+
+      (r.objektif?'<div style="margin-top:3px;color:#6d28d9"><strong>Obj:</strong> '+esc(r.objektif.substring(0,80))+'</div>':'')
+    );
+    const mgCell=isBukan?('<span style="color:#94a3b8">'+r.minggu_ke+'</span>'):('<strong>'+r.minggu_ke+'</strong><br><span style="font-size:8px;color:#0369a1">Ak '+akNum+'</span>');
+    const tajukCell=isBukan?('<em style="color:#94a3b8">'+esc(r.catatan_bukan_ak||'Bukan Akademik')+'</em>'):('<strong>'+esc(r.tajuk||'')+'</strong>'+(r.tema?'<br><span style="font-size:8px;color:#6d28d9">'+esc(r.tema)+'</span>':''));
+    const statusCell=isBukan?'<span style="color:#cbd5e1">–</span>':(isDone?'<span style="color:#059669;font-size:14px">✓</span>':'<span style="color:#cbd5e1">○</span>');
+    rowsHtml+='<tr style="'+rowBg+'border-bottom:1px solid #f1f5f9">'+
+      '<td style="text-align:center;white-space:nowrap;vertical-align:top;padding:5px 6px">'+mgCell+'</td>'+
+      '<td style="white-space:nowrap;font-size:8px;vertical-align:top;padding:5px 6px">'+fmtDate(r.tarikh_mula)+'<br>'+fmtDate(r.tarikh_akhir)+'</td>'+
+      '<td style="vertical-align:top;padding:5px 6px;font-size:9px">'+tajukCell+'</td>'+
+      '<td style="vertical-align:top;padding:5px 6px;font-size:9px">'+skCell+'</td>'+
+      '<td style="vertical-align:top;padding:5px 6px;font-size:9px">'+spCell+'</td>'+
+      '<td style="vertical-align:top;padding:5px 6px;font-size:9px">'+catatanCell+'</td>'+
+      '<td style="text-align:center;vertical-align:top;padding:5px 6px">'+statusCell+'</td>'+
+      '</tr>';
+  });
   const css='*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:10px;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-    '.pg{padding:20px 24px;max-width:1100px;margin:0 auto}'+
-    '.hdr{text-align:center;margin-bottom:14px;padding-bottom:12px;border-bottom:3px double #1d4ed8}'+
-    '.hdr h1{font-size:13px;font-weight:900;color:#1d4ed8;letter-spacing:.5px;margin-bottom:2px}'+
-    '.hdr h2{font-size:11px;font-weight:700;margin-bottom:3px}'+
-    '.hdr p{font-size:9px;color:#64748b}'+
-    '.stat-row{display:flex;gap:10px;margin-bottom:12px;justify-content:center}'+
-    '.sbox{border-radius:8px;padding:6px 14px;text-align:center}'+
-    '.snum{font-size:17px;font-weight:800;line-height:1}.slbl{font-size:8px;margin-top:2px}'+
-    'table{width:100%;border-collapse:collapse;font-size:9px}'+
-    'thead th{background:#1d4ed8;color:#fff;padding:5px 6px;font-size:8px;font-weight:700;text-align:left;white-space:nowrap}'+
-    'tbody tr{border-bottom:1px solid #f1f5f9}td{padding:4px 6px;vertical-align:top}'+
+    '.pg{padding:16px 20px;max-width:1200px;margin:0 auto}'+
+    '.kpm-hdr{border:2px solid #1d4ed8;border-radius:10px;padding:14px 18px;margin-bottom:14px;text-align:center}'+
+    '.kpm-sch{font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:.3px;margin-bottom:2px}'+
+    '.kpm-title{font-size:14px;font-weight:900;color:#1e293b;letter-spacing:.5px;margin-bottom:6px}'+
+    '.kpm-meta{display:flex;justify-content:center;gap:24px;font-size:9px;color:#64748b}'+
+    '.kpm-meta span{border-right:1px solid #e2e8f0;padding-right:24px;line-height:1.8}'+
+    '.kpm-meta span:last-child{border:none}'+
+    '.stat-row{display:flex;gap:8px;margin-bottom:12px;justify-content:center}'+
+    '.sbox{border-radius:8px;padding:5px 12px;text-align:center;border:1px solid #e2e8f0}'+
+    '.snum{font-size:15px;font-weight:800;line-height:1}.slbl{font-size:8px;margin-top:2px}'+
+    'table{width:100%;border-collapse:collapse}'+
+    'thead th{background:#1d4ed8;color:#fff;padding:6px 7px;font-size:9px;font-weight:700;text-align:left;border-right:1px solid rgba(255,255,255,.2)}'+
+    'tbody tr:nth-child(even):not([style*="background:#dbeafe"]):not([style*="background:#f8fafc"]):not([style*="background:#f0fdf4"]):not([style*="background:rgb"]){background:#fafafa}'+
+    '.sign-section{margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding-top:14px;border-top:2px solid #1d4ed8}'+
+    '.sign-box{text-align:center;border:1px solid #e2e8f0;border-radius:8px;padding:10px}'+
+    '.sign-role{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}'+
+    '.sign-name{font-size:10px;color:#1e293b;margin-top:2px}'+
+    '.sign-line{border-top:1px solid #94a3b8;margin-top:40px;padding-top:4px}'+
+    '.sign-date{font-size:9px;color:#94a3b8;margin-top:30px}'+
     '.footer{text-align:center;font-size:8px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:6px;margin-top:10px}'+
-    '.sign-row{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:16px;padding-top:12px}'+
-    '.sign-box{text-align:center}.sign-line{border-top:1px solid #94a3b8;margin-top:40px;padding-top:5px;font-size:9px;color:#64748b}'+
-    '.no-print{margin-bottom:12px;display:flex;gap:8px}@media print{.no-print{display:none}@page{margin:10mm;size:A4 landscape}}';
+    '.no-print{margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap}'+
+    '@media print{.no-print{display:none}@page{margin:8mm;size:A4 landscape}}';
   const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>RPT 2026 — '+esc(subj)+'</title>'+
     '<style>'+css+'</style></head><body><div class="pg">'+
     '<div class="no-print">'+
     '<button onclick="window.print()" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer">🖨️ Cetak / Simpan PDF</button>'+
     '<button onclick="window.close()" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer">✕ Tutup</button>'+
+    '<span style="font-size:11px;color:#64748b;line-height:2.5">Disyorkan: Print → Save as PDF → A4 Landscape</span>'+
     '</div>'+
-    '<div class="hdr"><h1>RANCANGAN PENGAJARAN TAHUNAN (RPT) 2026</h1>'+
-    '<h2>'+esc(subj)+' &nbsp;•&nbsp; '+esc(k?.nama||'–')+' &nbsp;(Tahun '+tahun+')</h2>'+
-    '<p>SK Sokor, Jeli, Kelantan &nbsp;|&nbsp; Guru: '+esc(S.profile?.nama||'–')+'</p></div>'+
+    // KPM Header
+    '<div class="kpm-hdr">'+
+    '<div class="kpm-sch">KEMENTERIAN PENDIDIKAN MALAYSIA</div>'+
+    '<div class="kpm-title">RANCANGAN PENGAJARAN TAHUNAN (RPT) TAHUN PELAJARAN 2026</div>'+
+    '<div class="kpm-meta">'+
+    '<span><strong>Sekolah:</strong> SK Sokor, Jeli, Kelantan (DBA5316)</span>'+
+    '<span><strong>Mata Pelajaran:</strong> '+esc(subj)+'</span>'+
+    '<span><strong>Kelas:</strong> '+esc(k?.nama||'–')+' (Tahun '+tahun+')</span>'+
+    '<span><strong>Guru:</strong> '+esc(S.profile?.nama||'–')+'</span>'+
+    '<span><strong>Peruntukan:</strong> '+jamMg+' waktu/minggu</span>'+
+    '</div></div>'+
+    // Stats
     '<div class="stat-row">'+
-    '<div class="sbox" style="background:#eff6ff;border:1px solid #bfdbfe"><div class="snum" style="color:#1d4ed8">'+akTotal+'</div><div class="slbl" style="color:#1d4ed8">Minggu Akademik</div></div>'+
-    '<div class="sbox" style="background:#f8fafc;border:1px solid #e2e8f0"><div class="snum" style="color:#64748b">'+bukanTotal+'</div><div class="slbl" style="color:#64748b">Bukan Akademik</div></div>'+
-    '<div class="sbox" style="background:#f0fdf4;border:1px solid #bbf7d0"><div class="snum" style="color:#059669">'+data.length+'</div><div class="slbl" style="color:#059669">Jumlah Minggu</div></div>'+
+    '<div class="sbox" style="background:#eff6ff"><div class="snum" style="color:#1d4ed8">'+akData.length+'</div><div class="slbl" style="color:#1d4ed8">Minggu Akademik</div></div>'+
+    '<div class="sbox" style="background:#faf5ff"><div class="snum" style="color:#6d28d9">~'+jamTotal+'</div><div class="slbl" style="color:#6d28d9">Jumlah Waktu PdP</div></div>'+
+    '<div class="sbox" style="background:#f0fdf4"><div class="snum" style="color:#059669">'+selesaiTotal+'</div><div class="slbl" style="color:#059669">Minggu Selesai</div></div>'+
+    '<div class="sbox" style="background:#fffbeb"><div class="snum" style="color:#d97706">'+(data.length-akData.length)+'</div><div class="slbl" style="color:#d97706">Bukan Akademik</div></div>'+
     '</div>'+
+    // Table
     '<table><thead><tr>'+
-    '<th>Mg Sek</th><th>Mg Ak</th><th>Tarikh</th><th>Tema</th>'+
-    '<th>Tajuk / Standard Kandungan</th><th>SK</th><th>SP</th><th>Objektif Pembelajaran</th><th>Status</th>'+
-    '</tr></thead><tbody>'+rows+'</tbody></table>'+
-    '<div class="sign-row">'+
-    '<div class="sign-box"><div class="sign-line">'+esc(S.profile?.nama||'–')+'<br>Guru Mata Pelajaran</div></div>'+
-    '<div class="sign-box"><div class="sign-line">Mohd Farimi bin Ab Rahman<br>Guru Besar SK Sokor</div></div>'+
+    '<th style="width:50px">Minggu<br>Sek / Ak</th>'+
+    '<th style="width:85px">Tarikh</th>'+
+    '<th style="width:160px">Tema / Tajuk</th>'+
+    '<th style="width:150px">Standard Kandungan (SK)</th>'+
+    '<th style="width:200px">Standard Pembelajaran (SP)</th>'+
+    '<th>Catatan<br>(EMK / PBD / Nilai Murni)</th>'+
+    '<th style="width:36px;text-align:center">Status</th>'+
+    '</tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
+    // Fasa 4: Signature block
+    '<div class="sign-section">'+
+    '<div class="sign-box">'+
+    '<div class="sign-role">Disediakan Oleh</div>'+
+    '<div class="sign-line"><div class="sign-name">'+esc(S.profile?.nama||'–')+'<br>Guru Mata Pelajaran</div></div>'+
+    '<div class="sign-date">Tarikh: ________________</div>'+
     '</div>'+
-    '<div class="footer">GuruEase © 2026 &nbsp;•&nbsp; Persistent RPT Engine &nbsp;•&nbsp; Dicetak: '+new Date().toLocaleString('ms-MY')+'</div>'+
+    '<div class="sign-box">'+
+    '<div class="sign-role">Disemak Oleh (Ketua Panitia)</div>'+
+    '<div class="sign-line"><div class="sign-name">________________</div></div>'+
+    '<div class="sign-date">Tarikh: ________________</div>'+
+    '</div>'+
+    '<div class="sign-box">'+
+    '<div class="sign-role">Disahkan Oleh</div>'+
+    '<div class="sign-line"><div class="sign-name">Mohd Farimi bin Ab Rahman<br>Guru Besar SK Sokor</div></div>'+
+    '<div class="sign-date">Tarikh: ________________</div>'+
+    '</div>'+
+    '</div>'+
+    '<div class="footer">GuruEase © 2026 &nbsp;•&nbsp; Persistent RPT Engine &nbsp;•&nbsp; Pematuhan SPI 3/1999 &nbsp;•&nbsp; Dicetak: '+new Date().toLocaleString('ms-MY')+'</div>'+
     '</div></body></html>';
   const w=window.open('','_blank');w.document.write(html);w.document.close();
 }
