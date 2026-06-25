@@ -440,12 +440,14 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
             <div class="prev-card">
               <div class="prev-hdr"><span class="ico" id="prev-ico">📚</span>
                 <div><h3 id="prev-subj">–</h3><p id="prev-klt">–</p></div></div>
-              <div class="irow"><span class="ik">Tajuk</span><span class="iv" id="prev-tj">–</span></div>
+              <div class="frow" style="margin-bottom:8px"><label class="lbl">Tajuk</label><input type="text" id="prev-tj" class="inp" style="margin-top:4px"></div>
               <div class="irow"><span class="ik">Masa</span><span class="iv" id="prev-ms">–</span></div>
               <div class="irow"><span class="ik">SP</span><span class="iv"><div class="tags" id="prev-sp"></div></span></div>
               <hr class="dv">
-              <p style="font-size:11px;font-weight:700;color:var(--m);margin-bottom:7px">LANGKAH PENGAJARAN</p>
+              <p style="font-size:11px;font-weight:700;color:var(--m);margin-bottom:7px">LANGKAH PENGAJARAN <span style="font-weight:400;color:#94a3b8">(boleh edit)</span></p>
               <div id="prev-ak"></div>
+              <div style="margin-top:10px"><label class="lbl">Refleksi Pengajaran (pilihan)</label>
+                <textarea id="prev-refleksi" class="inp" rows="2" style="margin-top:4px" placeholder="Refleksi selepas PdPc..."></textarea></div>
             </div>
             <div style="display:flex;gap:10px">
               <button class="btn bo" style="flex:1" onclick="q('#prev-box').classList.add('hidden');q('#jana-btn').classList.remove('hidden');q('#rtj').value='';S.selSP=[];q('#dskp-picker').querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false)">← Edit</button>
@@ -816,9 +818,12 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
     <div class="mhdr"><h3 id="rphm-title">Detail e-RPH</h3><button class="mx" onclick="closeRPHModal()">✕</button></div>
     <div id="rphm-body"></div>
     <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn bo" style="flex:1" onclick="cloneRPHById(S._curRPH?.id)">📋 Klon</button>
-      <button class="btn bp" style="flex:1" onclick="printRPHById(S._curRPH?.id)">🖨️ PDF</button>
-      <button class="btn bg2" style="flex:1" onclick="goToPBDFromRPH()">📊 PBD</button>
+      <div id="rphm-edit-btn"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bo" style="flex:1" onclick="cloneRPHById(S._curRPH?.id)">📋 Klon</button>
+        <button class="btn bp" style="flex:1" onclick="printRPHById(S._curRPH?.id)">🖨️ PDF</button>
+        <button class="btn bg2" style="flex:1" onclick="goToPBDFromRPH()">📊 PBD</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1021,7 +1026,7 @@ function renderKelasList(){
 }
 
 // ── RPH FORM ───────────────────────────────────────────────────
-function showRPHForm(){q('#rfs').classList.remove('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>{q('#'+id)?.classList.remove('on');});q('#pf')?.classList.add('on');q('#jana-btn').classList.remove('hidden');q('#prev-box').classList.add('hidden');document.querySelectorAll('.rph-saved-box').forEach(el=>el.remove());}
+function showRPHForm(){q('#rfs').classList.remove('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>{q('#'+id)?.classList.remove('on');});q('#pf')?.classList.add('on');q('#jana-btn').classList.remove('hidden');q('#prev-box').classList.add('hidden');q('#ws-dskp').classList.remove('hidden');document.querySelectorAll('.rph-saved-box').forEach(el=>el.remove());_editRPHId=null;}
 function showRPHList(){q('#rfs').classList.add('hidden');q('#rls').classList.remove('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#pl')?.classList.add('on');loadRPHList();}
 function showRPT(){q('#rfs').classList.add('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.remove('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#pr')?.classList.add('on');}
 function showOPR(){q('#rfs').classList.add('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.remove('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#po')?.classList.add('on');showOPRForm();}
@@ -1135,23 +1140,49 @@ function buildAktiviti(subj,spList,objTambahan,mod='bm'){
 function renderRPHPreview(rph,kelas,mMula,mTamat,hari){
   q('#prev-subj').textContent=rph.subjek;
   q('#prev-klt').textContent=(kelas?.nama||'–')+' • '+hari+(mMula?` • ${mMula}–${mTamat}`:'');
-  q('#prev-tj').textContent=rph.tajuk;q('#prev-ms').textContent=mMula&&mTamat?`${mMula} – ${mTamat}`:'–';
+  if(q('#prev-tj'))q('#prev-tj').value=rph.tajuk||'';
+  q('#prev-ms').textContent=mMula&&mTamat?`${mMula} – ${mTamat}`:'–';
   q('#prev-sp').innerHTML=S.selSP.map(s=>`<span class="tag">${esc(s.sp_kod)} ${esc(s.sp_tajuk.substring(0,30))}</span>`).join('');
-  const isJawi=S.rphData?.mod==='jawi'||rph.mod==='jawi';const rtlStyle=isJawi?'direction:rtl;text-align:right;font-family:"Traditional Arabic","Scheherazade New",Arial,sans-serif;':'';
-  q('#prev-ak').innerHTML=rph.aktiviti.map(a=>`<div class="rph-ak" style="${rtlStyle}"><h4>${esc(a.fasa)}</h4><p>${esc(a.aktiviti)}</p><p style="font-size:11px;color:var(--m);margin-top:3px">${esc(a.catatan)}</p></div>`).join('');
+  const isJawi=rph.mod==='jawi';
+  const rtlSt=isJawi?'direction:rtl;text-align:right;font-family:Arial,sans-serif;':'';
+  q('#prev-ak').innerHTML=(rph.aktiviti||[]).map((a,i)=>{
+    const dir=isJawi?'dir="rtl"':'';
+    return '<div class="rph-ak-edit" data-i="'+i+'">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--p);margin-bottom:4px" '+dir+'>'+esc(a.fasa)+'</div>'+
+      '<textarea class="inp ak-ak" rows="3" style="margin-top:0;font-size:12px;'+(rtlSt)+'" placeholder="Aktiviti...">'+esc(a.aktiviti||'')+'</textarea>'+
+      '<input class="inp ak-ct" style="margin-top:4px;font-size:11px;color:var(--m)" placeholder="Nota / kaedah / BBM..." value="'+esc(a.catatan||'')+'">'+
+      '</div>';
+  }).join('');
+  if(q('#prev-refleksi'))q('#prev-refleksi').value=rph.refleksi||'';
   const ico={'Bahasa Melayu':'📚','Bahasa Inggeris':'🇬🇧','Matematik':'🔢','Sains':'🔬','Sejarah':'📜','Pendidikan Islam':'🕌','j-QAF / Tasmik':'📖','Bahasa Arab':'🌙','Pendidikan Muzik':'🎵','Pendidikan Seni Visual':'🎨','Pendidikan Jasmani':'⚽','Pendidikan Kesihatan':'❤️','Reka Bentuk dan Teknologi':'⚙️','Dunia Sains dan Teknologi':'🔭'};
   q('#prev-ico').textContent=ico[rph.subjek]||'📋';
 }
 
 async function saveRPH(){
   if(_saving)return;if(!S.rphData){toast('Jana RPH dahulu.','err');return;}
+  // Read edited fields from preview
+  const editedTajuk=q('#prev-tj')?.value.trim()||S.rphData.tajuk;
+  const editedRefleksi=q('#prev-refleksi')?.value.trim()||'PDPc berjalan lancar. Murid memberikan respon yang baik.';
+  const akEls=document.querySelectorAll('.rph-ak-edit');
+  const editedAktiviti=(S.rphData.aktiviti||[]).map((a,i)=>{
+    const el=akEls[i];if(!el)return a;
+    return{...a,aktiviti:el.querySelector('.ak-ak')?.value||a.aktiviti,catatan:el.querySelector('.ak-ct')?.value||a.catatan};
+  });
   _saving=true;hov('Menyimpan RPH...');
-  const r=S.rphData;
-  const{data,error}=await db.from('rph').insert({
-    guru_id:r.guru_id,kelas_id:r.kelas_id,subjek:r.subjek,tarikh:r.tarikh,
-    masa_mula:r.masa_mula,masa_tamat:r.masa_tamat,tajuk:r.tajuk,objektif:r.objektif||'',
-    aktiviti:r.aktiviti,status:'selesai',refleksi:'PDPc berjalan lancar. Murid memberikan respon yang baik.'
-  }).select().single();
+  const r={...S.rphData,tajuk:editedTajuk,aktiviti:editedAktiviti,refleksi:editedRefleksi};
+  let data,error;
+  if(_editRPHId){
+    ({data,error}=await db.from('rph').update({
+      tajuk:r.tajuk,objektif:r.objektif||'',aktiviti:r.aktiviti,refleksi:r.refleksi,
+      masa_mula:r.masa_mula,masa_tamat:r.masa_tamat,mod:r.mod||null,status:'selesai'
+    }).eq('id',_editRPHId).select().single());
+  } else {
+    ({data,error}=await db.from('rph').insert({
+      guru_id:r.guru_id,kelas_id:r.kelas_id,subjek:r.subjek,tarikh:r.tarikh,
+      masa_mula:r.masa_mula,masa_tamat:r.masa_tamat,tajuk:r.tajuk,objektif:r.objektif||'',
+      aktiviti:r.aktiviti,mod:r.mod||null,status:'selesai',refleksi:r.refleksi
+    }).select().single());
+  }
   hov();_saving=false;
   if(error){toast('Gagal simpan: '+error.message,'err');return;}
   _rphCache.set(data.id,data);
@@ -1182,6 +1213,7 @@ async function loadRPHList(){
       <p>${fmtDate(r.tarikh)}${semakTxt}</p>
       <span class="sbadge ${sc}">${r.status==='selesai'?'Selesai':r.status==='tangguh'?'Ditangguh':'Draf'}</span>
       <div class="rli-acts">
+        ${!r.disemak?`<button class="rli-btn" style="background:#fef9c3;color:#854d0e" onclick="event.stopPropagation();editRPHById('${r.id}')">✏️ Edit</button>`:''}
         <button class="rli-btn" style="background:#eff6ff;color:var(--p)" onclick="event.stopPropagation();cloneRPHById('${r.id}')">📋 Klon</button>
         <button class="rli-btn" style="background:#f0fdf4;color:#059669" onclick="event.stopPropagation();printRPHById('${r.id}')">🖨️ PDF</button>
       </div></div></div>`;
@@ -1219,9 +1251,47 @@ function showRPHDetailById(id){
     '<hr class="dv">'+
     '<p style="font-size:11px;font-weight:700;color:var(--m);margin-bottom:8px">LANGKAH PENGAJARAN</p>'+
     actsHtml+toggleBtn+refHtml+ulHtml;
+  // Show/hide edit button based on disemak status
+  const editBtn=q('#rphm-edit-btn');
+  if(editBtn){
+    if(!r.disemak){
+      editBtn.innerHTML='<button class="btn" style="width:100%;margin-bottom:8px;background:#fef9c3;color:#854d0e;border:1px solid #fde047" onclick="editRPHById(S._curRPH?.id)">✏️ Edit RPH Ini</button>';
+    } else {
+      editBtn.innerHTML='<div style="text-align:center;font-size:11px;color:#059669;margin-bottom:8px">✅ RPH telah disemak — tidak boleh diedit</div>';
+    }
+  }
   q('#rphm').classList.remove('hidden');
 }
 function closeRPHModal(){q('#rphm').classList.add('hidden');S._curRPH=null;}
+function editRPHById(id){
+  const r=_rphCache.get(id);if(!r){toast('Data tidak dijumpai.','err');return;}
+  if(r.disemak){toast('RPH ini telah disemak oleh pentadbir — tidak boleh diedit.','err');return;}
+  closeRPHModal();_editRPHId=id;
+  switchTab('rph');showRPHForm();
+  setTimeout(()=>{
+    // Populate form fields
+    if(q('#rk'))q('#rk').value=r.kelas_id;
+    onKelasChange();
+    setTimeout(()=>{
+      if(q('#rs'))q('#rs').value=r.subjek;
+      if(q('#rt'))q('#rt').value=r.tarikh;
+      if(q('#rmm'))q('#rmm').value=r.masa_mula||'07:30';
+      if(q('#rmt'))q('#rmt').value=r.masa_tamat||'08:00';
+      if(q('#rmod'))q('#rmod').value=r.mod||'bm';
+      if(q('#rob'))q('#rob').value=r.objektif||'';
+      updateHari();
+      // Load RPH data into preview directly (skip DSKP picker)
+      S.rphData={...r};S.selSP=[];
+      const kelas=S.kelas.find(k=>k.id===r.kelas_id);
+      const hari=HARI_MY[new Date(r.tarikh+'T00:00:00').getDay()]||'';
+      renderRPHPreview(r,kelas,r.masa_mula,r.masa_tamat,hari);
+      q('#prev-box').classList.remove('hidden');
+      q('#jana-btn').classList.add('hidden');
+      q('#ws-dskp').classList.add('hidden');
+      toast('Mode Edit — ubah dan simpan semula.','inf');
+    },300);
+  },100);
+}
 function toggleRPHBMView(btn){const r=S._curRPH;if(!r)return;
   const acts=Array.isArray(r.aktiviti)?r.aktiviti:[];
   const container=btn.closest('.rph-ak')?.parentElement||btn.parentElement.previousElementSibling;
@@ -1411,6 +1481,7 @@ function renderMuridPBD(murid,pbdMap){
 }
 
 let _pbdMuridId=null;
+let _editRPHId=null;
 function openBandModal(muridId,nama,subj){
   _pbdMuridId=muridId;
   q('#bmn').textContent=nama;q('#bms').textContent=esc(subj);
