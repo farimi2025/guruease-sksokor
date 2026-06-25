@@ -1344,16 +1344,30 @@ async function saveRPH(){
   const r={...S.rphData,tajuk:editedTajuk,aktiviti:editedAktiviti,refleksi:editedRefleksi};
   let data,error;
   if(_editRPHId){
-    ({data,error}=await db.from('rph').update({
+    // Update tanpa .select() — elak double-policy 403
+    const{error:updErr}=await db.from('rph').update({
       tajuk:r.tajuk,objektif:r.objektif||'',aktiviti:r.aktiviti,refleksi:r.refleksi,
       masa_mula:r.masa_mula,masa_tamat:r.masa_tamat,mod:r.mod||null,status:'selesai'
-    }).eq('id',_editRPHId).select().single());
+    }).eq('id',_editRPHId);
+    error=updErr;
+    if(!updErr){
+      const{data:ud}=await db.from('rph').select('*').eq('id',_editRPHId).single();
+      data=ud;
+    }
   } else {
-    ({data,error}=await db.from('rph').insert({
+    // Insert dahulu tanpa .select() — elak PostgREST INSERT+RETURNING double-policy 403
+    const{error:insErr}=await db.from('rph').insert({
       guru_id:r.guru_id,kelas_id:r.kelas_id,subjek:r.subjek,tarikh:r.tarikh,
       masa_mula:r.masa_mula,masa_tamat:r.masa_tamat,tajuk:r.tajuk,objektif:r.objektif||'',
       aktiviti:r.aktiviti,mod:r.mod||null,status:'selesai',refleksi:r.refleksi
-    }).select().single());
+    });
+    error=insErr;
+    if(!insErr){
+      const{data:nd}=await db.from('rph').select('*')
+        .eq('guru_id',r.guru_id).eq('tarikh',r.tarikh).eq('subjek',r.subjek)
+        .order('created_at',{ascending:false}).limit(1).single();
+      data=nd;
+    }
   }
   hov();_saving=false;
   if(error){toast('Gagal simpan: '+error.message,'err');return;}
@@ -1747,13 +1761,15 @@ async function simpanOPR(){
   const masaMula=q('#opr-masa-mula').value||null;
   const masaTamat=q('#opr-masa-tamat').value||null;
   // 1. Save OPR
-  const{data:oprRec,error:oprErr}=await db.from('opr').insert({
+  // OPR insert tanpa .select() — elak double-policy 403
+  const{error:oprErr}=await db.from('opr').insert({
     guru_id:S.user.id,kelas_id:selectedKelas[0]||null,tarikh,
     waktu_mula:masaMula,waktu_tamat:masaTamat,
     sebab,tindakan,catatan:q('#opr-catatan').value.trim(),
     status:'hantar',jenis:_oprJenis,...payload
-  }).select().single();
+  });
   if(oprErr){hov();_saving=false;toast('Gagal simpan OPR: '+oprErr.message,'err');return;}
+  // OPR disimpan (fetch data tidak diperlukan — form reset terus)
   // 2. Auto-tangguh RPH for selected kelas on this date
   let tangguhCount=0;
   if(selectedKelas.length){
@@ -1781,7 +1797,7 @@ async function simpanOPR(){
 
 async function loadOPRList(){
   q('#opr-list-cont').innerHTML='<div style="text-align:center;padding:20px"><div class="sp"></div></div>';
-  const{data}=await db.from('opr').select('*,kelas(nama)').eq('guru_id',S.user.id).order('tarikh',{ascending:false}).limit(50);
+  const{data}=await db.from('opr').select('*').eq('guru_id',S.user.id).order('tarikh',{ascending:false}).limit(50);
   if(!data?.length){q('#opr-list-cont').innerHTML='<div class="empty"><div class="ei">📝</div><p>Tiada rekod OPR.</p></div>';return;}
   data.forEach(r=>_oprCache.set(r.id,r));
   const jeIco={guru:'🏃',program:'🎯',murid:'🎒',luar:'⚡'};
@@ -2256,7 +2272,7 @@ async function semakRPT(){
   bar.innerHTML='<div class="sp" style="width:18px;height:18px"></div><div style="font-size:12px;color:var(--m)">Menyemak...</div>';
   bar.style.cssText='margin-top:10px;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;background:var(--bg)';
   bar.classList.remove('hidden');
-  const{data:master}=await db.from('rpt_master').select('*').eq('kelas_id',kId).eq('subjek',subj).eq('tahun',2026).maybeSingle();
+  const{data:master}=await db.from('rpt_master').select('*').eq('guru_id',S.user.id).eq('kelas_id',kId).eq('subjek',subj).eq('tahun',2026).maybeSingle();
   if(master){
     _rptMasterId=master.id;
     const jamMg=JAM_SEMINGGU[subj]||3;
@@ -2305,12 +2321,16 @@ async function doJanaRPT(semula=false){
   const jamMg=JAM_SEMINGGU[subj]||3;
   hov('Fasa 2: Membina RPT 43 minggu...');
   // Upsert rpt_master
-  const{data:master,error:mErr}=await db.from('rpt_master').upsert({
-    guru_id:S.user.id,kelas_id:kId,subjek,tahun:2026,tahun_murid:tahun,
+  // FIX G: upsert tanpa .select() — pisah dari SELECT (elak 403)
+  const{error:mErr}=await db.from('rpt_master').upsert({
+    guru_id:S.user.id,kelas_id:kId,subjek:subj,tahun:2026,tahun_murid:tahun,
     versi:semula?2:1,status:'aktif',jam_seminggu:jamMg,
     tarikh_jana:todayStr(),tarikh_kemaskini:new Date().toISOString()
-  },{onConflict:'guru_id,kelas_id,subjek,tahun'}).select().single();
+  },{onConflict:'guru_id,kelas_id,subjek,tahun'});
   if(mErr){hov();toast('Ralat: '+mErr.message,'err');return;}
+  const{data:master}=await db.from('rpt_master').select('id')
+    .eq('guru_id',S.user.id).eq('kelas_id',kId).eq('subjek',subj).eq('tahun',2026).maybeSingle();
+  if(!master?.id){hov();toast('Ralat: rekod RPT master tidak dijumpai.','err');return;}
   _rptMasterId=master.id;
   await db.from('rpt_minggu').delete().eq('rpt_id',master.id);
   const schoolStart=new Date('2026-01-05');
@@ -2645,7 +2665,11 @@ function closeSemakan(){q('#t-semak').classList.add('hidden');switchTab('profil'
 async function loadSemakan(){
   q('#sk-list').innerHTML='<div style="text-align:center;padding:20px"><div class="sp"></div></div>';
   const dari=q('#sk-dari').value;const sts=q('#sk-sts').value;
-  let query=db.from('rph').select('*,profiles(nama,jawatan)').order('tarikh',{ascending:false}).limit(100);
+  // FIX H: buang FK join profiles (tiada FK dalam schema cache → 400)
+  // Load profiles dulu, kemudian map secara manual
+  const{data:_allProf}=await db.from('profiles').select('id,nama,jawatan');
+  const _profMap={};(_allProf||[]).forEach(p=>_profMap[p.id]=p);
+  let query=db.from('rph').select('*').order('tarikh',{ascending:false}).limit(100);
   if(dari)query=query.gte('tarikh',dari);
   if(sts==='belum')query=query.eq('disemak',false);
   else if(sts==='semak')query=query.eq('disemak',true);
@@ -2656,10 +2680,10 @@ async function loadSemakan(){
   data.forEach(r=>_rphCache.set(r.id,r));
   const k_map={};S.kelas.forEach(k=>k_map[k.id]=k.nama);
   q('#sk-list').innerHTML=data.map(r=>{
-    const guruNama=r.profiles?.nama||'–';const kNama=k_map[r.kelas_id]||'–';
+    const _rProf=_profMap[r.guru_id]||{};const guruNama=_rProf.nama||'–';const kNama=k_map[r.kelas_id]||'–';
     const cls=r.disemak?'disemak':'belum';
     return`<div class="sk-item ${cls}" onclick="openSemakModal('${r.id}')">
-      <div class="sk-guru">👤 ${esc(guruNama)} • ${esc(r.profiles?.jawatan||'Guru')}</div>
+      <div class="sk-guru">👤 ${esc(guruNama)} • ${esc(_rProf.jawatan||'Guru')}</div>
       <h4>${esc(r.tajuk)}</h4>
       <p>${esc(r.subjek)} • ${esc(kNama)} • ${fmtDate(r.tarikh)}</p>
       <p>${r.disemak?'✅ Sudah disemak':'⏳ Belum disemak'}${r.tarikh_semak?' • '+fmtDate(r.tarikh_semak):''}</p>
