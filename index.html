@@ -1713,14 +1713,23 @@ function printLaporanGB(){
   if(!S._lgbData){toast('Jana laporan dahulu.','err');return;}
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan GB</title>
-  <style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}h1{font-size:14px;font-weight:bold;text-align:center}
-  .card{border:1px solid #ddd;border-radius:4px;padding:10px;margin-bottom:8px}
-  .name{font-weight:bold;font-size:13px}.role{font-size:11px;color:#666;margin-bottom:6px}
-  .stats{display:flex;gap:10px}.stat{text-align:center;padding:4px 8px;border:1px solid #ddd;border-radius:3px}
-  .stat .v{font-size:16px;font-weight:bold;color:#1d4ed8}.stat .l{font-size:9px;color:#666}
-  footer{text-align:center;font-size:10px;color:#666;margin-top:12px}@media print{button{display:none}}</style></head><body>
+  <style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;font-size:12px;padding:20px;color:#1e293b}
+  h1{font-size:16px;font-weight:bold;text-align:center;margin-bottom:4px}
+  .sub{text-align:center;font-size:11px;color:#64748b;margin-bottom:16px}
+  .lgb-guru-card{border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px;page-break-inside:avoid}
+  .lgb-guru-name{font-weight:bold;font-size:13px;margin-bottom:2px}
+  .lgb-guru-role{font-size:11px;color:#64748b;margin-bottom:8px}
+  .lgb-stats{display:flex;gap:8px;flex-wrap:wrap}
+  .lgb-stat{text-align:center;padding:6px 12px;border:1px solid #e2e8f0;border-radius:6px;min-width:60px}
+  .lgb-stat .v{font-size:18px;font-weight:bold;color:#1d4ed8;line-height:1.2}
+  .lgb-stat .l{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px}
+  footer{text-align:center;font-size:10px;color:#94a3b8;margin-top:16px;padding-top:8px;border-top:1px solid #e2e8f0}
+  @media print{@page{margin:15mm}button{display:none}}
+  </style></head><body>
   <h1>LAPORAN PRESTASI GURU</h1>
-  <p style="text-align:center;font-size:11px">SK Sokor • ${q('#lgb-d1').value||'–'} hingga ${q('#lgb-d2').value||'–'}</p>
+  <p class="sub">SK Sokor • ${q('#lgb-d1').value||'–'} hingga ${q('#lgb-d2').value||'–'}</p>
   ${S._lgbData}
   <footer>GuruEase v2.0 © 2026 • Dicetak: ${new Date().toLocaleString('ms-MY')}</footer>
   <script>window.onload=()=>window.print();<\/script></body></html>`);
