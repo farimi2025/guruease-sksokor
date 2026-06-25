@@ -969,10 +969,14 @@ async function loadDashboard(){
   const{count:mc}=await db.from('murid').select('*',{count:'exact',head:true}).eq('aktif',true);
   q('#sm').textContent=mc??'–';
   const{data:rphW}=await db.from('rph').select('id,status').eq('guru_id',S.user.id).gte('tarikh',ws).lte('tarikh',we);
-  q('#sr').textContent=rphW?.length??0;
-  if(q('#ds-selesai'))q('#ds-selesai').textContent=rphW?.filter(r=>r.status==='selesai').length??0;
-  if(q('#ds-draf'))q('#ds-draf').textContent=rphW?.filter(r=>r.status==='draf').length??0;
-  if(q('#ds-tangguh'))q('#ds-tangguh').textContent=rphW?.filter(r=>r.status==='tangguh').length??0;
+  const rphSel=rphW?.filter(r=>(r.status||'').toLowerCase()==='selesai')??[];
+  const rphDraf=rphW?.filter(r=>(r.status||'').toLowerCase()==='draf')??[];
+  const rphTangguh=rphW?.filter(r=>(r.status||'').toLowerCase()==='tangguh')??[];
+  const rphTotal=rphSel.length+rphDraf.length+rphTangguh.length;
+  q('#sr').textContent=rphTotal;
+  if(q('#ds-selesai'))q('#ds-selesai').textContent=rphSel.length;
+  if(q('#ds-draf'))q('#ds-draf').textContent=rphDraf.length;
+  if(q('#ds-tangguh'))q('#ds-tangguh').textContent=rphTangguh.length;
   q('#dash-rph-sec')?.classList.toggle('hidden',!rphW?.length);
   const{count:pbdCnt}=await db.from('pbd').select('*',{count:'exact',head:true}).eq('guru_id',S.user.id).gte('tarikh',ws).lte('tarikh',we);
   q('#spbd').textContent=pbdCnt??0;
