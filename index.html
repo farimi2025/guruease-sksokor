@@ -1756,5 +1756,17 @@ document.addEventListener('keydown',e=>{
 
 // ── INIT ───────────────────────────────────────────────────────
 db.auth.onAuthStateChange((event,session)=>{
+  if(S.user&&!_appShown){_appShown=true;initApp();}
+  else if(!S.user&&!_loginShown){_loginShown=true;safeShowLogin();}
+});
+
+// Check existing session
+(async()=>{
+  const{data:{session}}=await db.auth.getSession();
   S.user=session?.user??null;
-  if(S.user&&!_appSho
+  if(S.user){_appShown=true;initApp();}
+  else{_loginShown=true;safeShowLogin();}
+})();
+</script>
+</body>
+</html>
