@@ -1051,7 +1051,7 @@ function onSPChange(cb){
   const chip=cb.closest('.sp-chip');chip?.classList.toggle('sp-chip-checked',cb.checked);
   const obj={id:cb.value,sp_kod:cb.dataset.kod,sp_tajuk:cb.dataset.tajuk};
   if(cb.checked)S.selSP.push(obj);else S.selSP=S.selSP.filter(x=>x.id!==cb.value);
-  if(S.selSP.length===1&&q('#rtj')&&!q('#rtj').value)q('#rtj').value=S.selSP[0].sp_tajuk||'';
+  if(S.selSP.length>=1&&q('#rtj'))q('#rtj').value=S.selSP[0].sp_tajuk||'';
 }
 
 async function loadRPTHint(kId,subj){
