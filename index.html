@@ -1198,13 +1198,13 @@ function showRPHDetailById(id){
     <hr class="dv">
     <p style="font-size:11px;font-weight:700;color:var(--m);margin-bottom:8px">LANGKAH PENGAJARAN</p>
     ${(()=>{const isJ=r.mod==='jawi';const rS=isJ?'direction:rtl;text-align:right;font-family:\"Traditional Arabic\",\"Scheherazade New\",Arial,sans-serif;':'';return acts.map(a=>`<div class="rph-ak" style="${rS}"><h4>${esc(a.fasa||'')}</h4><p>${esc(a.aktiviti||'')}</p>${a.catatan?`<p style="font-size:11px;color:var(--m);margin-top:2px">${esc(a.catatan)}</p>`:''}</div>`).join('');})()}
-    ${(r.mod==='jawi'||r.mod==='en')?`<div style="margin-top:10px;text-align:center"><button class="btn" style="font-size:11px;padding:6px 14px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1" onclick="toggleRPHBMView(this,${JSON.stringify(r).replace(/'/g,\'')})">🔄 Lihat BM Rumi (Untuk GB)</button></div>`:''}
+    ${(r.mod==='jawi'||r.mod==='en')?`<div style="margin-top:10px;text-align:center"><button class="btn" style="font-size:11px;padding:6px 14px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1" onclick="toggleRPHBMView(this)">🔄 Lihat BM Rumi (Untuk GB)</button></div>`:''}
     ${r.refleksi?`<hr class="dv"><div class="irow"><span class="ik">Refleksi</span><span class="iv">${esc(r.refleksi)}</span></div>`:''}
     ${r.ulasan_gb?`<div class="sk-ulasan">💬 Ulasan GB: ${esc(r.ulasan_gb)}</div>`:''}`;
   q('#rphm').classList.remove('hidden');
 }
 function closeRPHModal(){q('#rphm').classList.add('hidden');S._curRPH=null;}
-function toggleRPHBMView(btn,r){
+function toggleRPHBMView(btn){const r=S._curRPH;if(!r)return;
   const acts=Array.isArray(r.aktiviti)?r.aktiviti:[];
   const container=btn.closest('.rph-ak')?.parentElement||btn.parentElement.previousElementSibling;
   const isShowing=btn.dataset.bmShown==='1';
