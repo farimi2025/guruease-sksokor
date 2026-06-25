@@ -202,12 +202,26 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
 .rli-btn{border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .rli-btn:active{opacity:.7}
 /* RPT */
-.rpt-item{background:var(--s);border-radius:var(--rad);padding:13px 15px;box-shadow:var(--sh);margin-bottom:8px;border-left:4px solid var(--b)}
-.rpt-item.selesai{border-left-color:var(--g)}
-.rpt-item.belum{border-left-color:var(--b)}
-.rpt-item .ri-minggu{font-size:11px;font-weight:700;color:var(--m);margin-bottom:3px}
-.rpt-item .ri-tajuk{font-size:14px;font-weight:600}
-.rpt-item .ri-info{font-size:11px;color:var(--m);margin-top:3px}
+.rpt-week{background:var(--s);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh);border-left:5px solid var(--b);transition:all .2s;position:relative}
+.rpt-week.ak-ok{border-left-color:var(--p)}
+.rpt-week.ak-done{border-left-color:var(--g)}
+.rpt-week.bukan-ak{border-left-color:#cbd5e1;background:#f8fafc;opacity:.75}
+.rpt-week.minggu-ini{box-shadow:0 0 0 2px var(--p),var(--sh)}
+.rpt-wbadge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:50%;background:var(--p);color:#fff;font-size:10px;font-weight:700;margin-right:8px;flex-shrink:0;padding:0 4px}
+.rpt-wbadge.bukan{background:#94a3b8}
+.rpt-wbadge.done{background:var(--g)}
+.rpt-week-hdr{display:flex;align-items:center;margin-bottom:6px}
+.rpt-week-info{flex:1;min-width:0}
+.rpt-wtajuk{font-size:13px;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rpt-wmeta{font-size:11px;color:var(--m);margin-top:2px}
+.rpt-week-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.rpt-wbtn{border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.rpt-wbtn:active{opacity:.7}
+.rpt-counter{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px;font-size:12px}
+.rpt-cnt-box{background:var(--s);border-radius:8px;padding:6px 12px;box-shadow:var(--sh);display:flex;flex-direction:column;align-items:center;flex:1;min-width:70px}
+.rpt-cnt-num{font-size:20px;font-weight:800;line-height:1.1}
+.rpt-cnt-lbl{font-size:10px;color:var(--m);margin-top:2px}
+.rpt-hint-bar{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #c4b5fd;border-radius:10px;padding:10px 13px;font-size:12px;color:#5b21b6;margin-bottom:10px;line-height:1.5}
 /* PBD */
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .mc{background:var(--s);border-radius:var(--rad);padding:13px 10px;text-align:center;cursor:pointer;box-shadow:var(--sh);border:2px solid transparent;transition:all .15s}
@@ -220,6 +234,13 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
 .mj{font-size:10px;color:var(--m)}
 .pstat2{background:#eff6ff;border-radius:var(--rad);padding:11px 15px;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between}
 .pstat2 strong{font-size:14px;font-weight:700;color:var(--p)}
+/* DAFTAR STAF */
+.staf-card{background:var(--s);border-radius:12px;padding:13px 15px;box-shadow:var(--sh);margin-bottom:8px;display:flex;align-items:center;gap:12px;border-left:4px solid var(--b)}
+.staf-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:#ede9fe}
+.staf-nama{font-size:13px;font-weight:700}
+.staf-meta{font-size:11px;color:var(--m);margin-top:2px}
+.staf-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#ede9fe;color:#6d28d9}
+.jawatan-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#dbeafe;color:#1d4ed8}
 /* PROFIL */
 .phdr{text-align:center;padding:18px 16px 8px}
 .pav{width:76px;height:76px;background:var(--p);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 10px;color:#fff}
@@ -468,17 +489,21 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
       <!-- RPT -->
       <div id="rpt-sec" class="hidden">
         <div class="card">
-          <div class="ctitle">📅 Jana RPT Tahunan</div>
+          <div class="ctitle">📅 Rancangan Pengajaran Tahunan</div>
           <div class="fstack">
             <div><label class="lbl">Kelas</label>
               <select id="rpt-kelas" class="inp" onchange="onRPTKelasChange()"><option value="">-- Pilih Kelas --</option></select></div>
             <div><label class="lbl">Mata Pelajaran</label>
-              <select id="rpt-subj" class="inp">
-                <option value="">-- Pilih Kelas Dahulu --</option>
-              </select></div>
+              <select id="rpt-subj" class="inp"><option value="">-- Pilih Kelas Dahulu --</option></select></div>
           </div>
-          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn bpur" style="flex:2;min-width:140px" onclick="doJanaRPT()">📅 Jana RPT 42 Minggu</button>
+          <div id="rpt-counter" class="rpt-counter hidden">
+            <div class="rpt-cnt-box"><div class="rpt-cnt-num" id="rpt-cnt-ak" style="color:var(--p)">0</div><div class="rpt-cnt-lbl">Minggu Akademik</div></div>
+            <div class="rpt-cnt-box"><div class="rpt-cnt-num" id="rpt-cnt-bukan" style="color:#94a3b8">0</div><div class="rpt-cnt-lbl">Bukan Akademik</div></div>
+            <div class="rpt-cnt-box"><div class="rpt-cnt-num" id="rpt-cnt-jumlah" style="color:var(--t)">0</div><div class="rpt-cnt-lbl">Jumlah Minggu</div></div>
+          </div>
+          <div class="rpt-hint-bar hidden" id="rpt-hint-bar">💡 Tandakan minggu <strong>Bukan Akademik</strong> (Minggu Sukan, Peperiksaan, Apresiasi dll) — sistem akan kira minggu akademik secara automatik.</div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn bpur" style="flex:2;min-width:140px" onclick="doJanaRPT()">📅 Jana RPT 43 Minggu</button>
             <button class="btn bo" style="flex:1;min-width:70px" onclick="lihatRPT()">👁️ Lihat</button>
             <button class="btn bg2" style="flex:1;min-width:70px" onclick="printRPT()">🖨️ PDF</button>
           </div>
@@ -638,6 +663,15 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
         <button class="toggle" id="dkt" onclick="toggleDark()"></button>
       </div>
       <div style="height:8px"></div>
+      <!-- Daftar Staf (Admin only) -->
+      <div id="card-daftar-staf" class="card hidden" style="cursor:pointer;border:1.5px solid #fde68a" onclick="openDaftarStaf()">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:26px">👥</div>
+          <div style="flex:1"><div style="font-weight:700;font-size:14px">Pengurusan Staf</div><div style="font-size:11px;color:var(--m)">Daftar & urus akaun guru sekolah</div></div>
+          <div style="color:var(--m);font-size:20px">›</div>
+        </div>
+      </div>
+      <div style="height:6px"></div>
       <!-- Semakan GB -->
       <div id="card-semakan" class="card hidden" style="cursor:pointer;border:1.5px solid #c4b5fd" onclick="openSemakan()">
         <div style="display:flex;align-items:center;gap:12px">
@@ -925,7 +959,7 @@ function safeShowLogin(){
 async function loadProfile(){
   const{data}=await db.from('profiles').select('*').eq('id',S.user.id).single();
   if(data){S.profile=data;}
-  else{const n=S.user.email.split('@')[0].toUpperCase();await db.from('profiles').insert({id:S.user.id,nama:n,jawatan:'Guru'});S.profile={id:S.user.id,nama:n,jawatan:'Guru'};}
+  else{const n=S.user.email.split('@')[0].toUpperCase();await db.from('profiles').insert({id:S.user.id,nama:n,jawatan:'Guru',emel:S.user.email});S.profile={id:S.user.id,nama:n,jawatan:'Guru',emel:S.user.email};}
 }
 async function loadKelas(){const{data}=await db.from('kelas').select('*').order('nama');S.kelas=data||[];}
 
@@ -1618,39 +1652,62 @@ async function toggleMuridAktif(id,aktif){
 }
 
 // ── RPT MODULE ─────────────────────────────────────────────────
+const HARI_BUKAN_AK=['Minggu Sukan','Minggu Apresiasi','Minggu Peperiksaan','Ujian Bulanan','Program Sekolah','Lain-lain'];
+
 function onRPTKelasChange(){const kId=q('#rpt-kelas').value;const tahun=getKelasYear(kId);updateSubjekSel('rpt-subj',tahun,kId);}
+
+function _rptUpdateCounter(data){
+  const ak=(data||[]).filter(r=>!r.bukan_akademik).length;
+  const bukan=(data||[]).filter(r=>r.bukan_akademik).length;
+  if(q('#rpt-cnt-ak'))q('#rpt-cnt-ak').textContent=ak;
+  if(q('#rpt-cnt-bukan'))q('#rpt-cnt-bukan').textContent=bukan;
+  if(q('#rpt-cnt-jumlah'))q('#rpt-cnt-jumlah').textContent=data?.length||0;
+  q('#rpt-counter')?.classList.remove('hidden');
+  q('#rpt-hint-bar')?.classList.remove('hidden');
+}
 
 async function doJanaRPT(){
   const kId=q('#rpt-kelas').value;const subj=q('#rpt-subj').value;
   if(!kId){toast('Pilih kelas.','err');return;}if(!subj){toast('Pilih mata pelajaran.','err');return;}
-  hov('Jana RPT 42 minggu...');
-  const tahun=getKelasYear(kId);const ck=`${tahun}-${subj}`;
-  if(!dskpCache[ck]){const{data}=await db.from('dskp').select('*').eq('subjek',subj).eq('tahun',tahun).order('sp_kod');dskpCache[ck]=data||[];}
+  hov('Jana RPT 43 minggu...');
+  const tahun=getKelasYear(kId);const ck=tahun+'-'+subj;
+  if(!dskpCache[ck]){const{data}=await db.from('dskp').select('*').eq('subjek',subj).eq('tahun',tahun).order('minggu_mula');dskpCache[ck]=data||[];}
   const dskp=dskpCache[ck];
-  // Build 42 weeks starting from first week of school 2026
+  // Load takwim for 2026 to detect cuti weeks
+  const{data:takwim}=await db.from('takwim').select('tarikh,jenis,penerangan').gte('tarikh','2026-01-01').lte('tarikh','2026-12-31');
+  const cutiDates=new Set((takwim||[]).filter(t=>t.jenis!=='sekolah').map(t=>t.tarikh.slice(0,10)));
+  // Delete existing RPT for this class/subject first
+  await db.from('rpt').delete().eq('kelas_id',kId).eq('subjek',subj).eq('tahun_pelajaran',2026);
+  // Build 43 weeks, Isnin as week start
   const schoolStart=new Date('2026-01-05');
-  const items=[];
-  for(let mg=1;mg<=42;mg++){
+  const items=[];let akWeek=0;
+  for(let mg=1;mg<=43;mg++){
     const wStart=new Date(schoolStart);wStart.setDate(schoolStart.getDate()+(mg-1)*7);
     const wEnd=new Date(wStart);wEnd.setDate(wStart.getDate()+4);
-    // Find SP for this week
-    const sp=dskp.filter(d=>d.minggu_mula<=mg&&d.minggu_tamat>=mg);
-    const tajuk=sp.length?(sp[0].sk_tajuk||sp[0].sp_tajuk).substring(0,80):`Minggu ${mg} — ${subj}`;
+    const wStartStr=wStart.toISOString().slice(0,10);
+    // Check if this week has cuti dates (Mon-Fri)
+    let cutiCount=0;
+    for(let d=0;d<5;d++){const dd=new Date(wStart);dd.setDate(wStart.getDate()+d);if(cutiDates.has(dd.toISOString().slice(0,10)))cutiCount++;}
+    const bukanAk=cutiCount>=3;// if 3+ days are cuti, mark as bukan akademik
+    if(!bukanAk)akWeek++;
+    // Find DSKP using academic week number
+    const sp=dskp.filter(d=>d.minggu_mula<=akWeek&&d.minggu_tamat>=akWeek);
+    const tema=sp[0]?.tema||'';
+    let tajuk='';
+    if(bukanAk){tajuk='[Minggu Bukan Akademik]';}
+    else if(sp.length){tajuk=(sp[0].sk_tajuk||sp[0].sp_tajuk||'').substring(0,80);}
+    else{tajuk=subj+' — Minggu Akademik '+akWeek;}
     items.push({guru_id:S.user.id,kelas_id:kId,subjek:subj,tahun_pelajaran:2026,minggu:mg,
-      tarikh_mula:wStart.toISOString().slice(0,10),tarikh_tamat:wEnd.toISOString().slice(0,10),
-      tema:sp[0]?.tema||'',tajuk,sp_kod:sp.map(s=>s.sp_kod),sp_tajuk:sp.map(s=>s.sp_tajuk),
-      objektif:'Murid dapat menguasai kemahiran yang ditetapkan dalam DSKP.',status:'belum'});
+      tarikh_mula:wStartStr,tarikh_tamat:wEnd.toISOString().slice(0,10),
+      tema,tajuk,sp_kod:sp.map(s=>s.sp_kod),sp_tajuk:sp.map(s=>s.sp_tajuk),
+      objektif:sp.length?'Murid dapat menguasai kemahiran yang ditetapkan dalam DSKP.':'',
+      status:'belum',bukan_akademik:bukanAk,catatan_bukan_ak:bukanAk?'Minggu cuti / bukan akademik':''});
   }
-  // Insert all, then clean old
   let insertErr=null;
-  for(let i=0;i<items.length;i+=10){
-    const{error}=await db.from('rpt').insert(items.slice(i,i+10));
-    if(error){insertErr=error;break;}
-  }
-  if(insertErr){hov();toast('Ralat insert RPT: '+insertErr.message,'err',5000);return;}
-  const cutoff=new Date(Date.now()-items.length*500).toISOString();
-  await db.from('rpt').delete().eq('kelas_id',kId).eq('subjek',subj).eq('tahun_pelajaran',2026).lt('created_at',cutoff);
-  hov();toast('RPT 42 minggu berjaya dijana!','ok');lihatRPT();
+  for(let i=0;i<items.length;i+=10){const{error}=await db.from('rpt').insert(items.slice(i,i+10));if(error){insertErr=error;break;}}
+  hov();
+  if(insertErr){toast('Ralat: '+insertErr.message,'err',5000);return;}
+  toast('RPT 43 minggu berjaya dijana!','ok');lihatRPT();
 }
 
 async function lihatRPT(){
@@ -1659,17 +1716,55 @@ async function lihatRPT(){
   q('#rpt-list').innerHTML='<div style="text-align:center;padding:20px"><div class="sp"></div></div>';
   const{data}=await db.from('rpt').select('*').eq('kelas_id',kId).eq('subjek',subj).eq('tahun_pelajaran',2026).order('minggu');
   if(!data?.length){q('#rpt-list').innerHTML='<div class="empty"><div class="ei">📅</div><p>Tiada RPT. Klik Jana RPT untuk buat baru.</p></div>';return;}
-  const today=todayStr();
+  _rptUpdateCounter(data);
+  const today=todayStr();let akNum=0;
   q('#rpt-list').innerHTML=data.map(r=>{
+    if(!r.bukan_akademik)akNum++;
     const isCurrent=r.tarikh_mula&&r.tarikh_tamat&&r.tarikh_mula<=today&&r.tarikh_tamat>=today;
-    return`<div class="rpt-item ${r.status==='selesai'?'selesai':'belum'}" style="${isCurrent?'border:2px solid var(--p)':''}">
-      <div class="ri-minggu">Minggu ${r.minggu}${isCurrent?' ← MINGGU INI':''}</div>
-      <div class="ri-tajuk">${esc(r.tajuk)}</div>
-      <div class="ri-info">${fmtDate(r.tarikh_mula)} – ${fmtDate(r.tarikh_tamat)}</div>
-      ${r.tema?`<div class="ri-info" style="color:var(--pur)">Tema: ${esc(r.tema)}</div>`:''}
-      <span class="sbadge ${r.status==='selesai'?'ss':'sw'}" style="margin-top:4px;display:inline-block">${r.status==='selesai'?'Selesai':'Belum'}</span>
-    </div>`;
+    const isDone=r.status==='selesai';
+    const isBukan=r.bukan_akademik;
+    const cls='rpt-week'+(isBukan?' bukan-ak':isDone?' ak-done':' ak-ok')+(isCurrent?' minggu-ini':'');
+    const badgeCls='rpt-wbadge'+(isBukan?' bukan':isDone?' done':'');
+    const badgeLbl=isBukan?'–':(isDone?'✓':akNum);
+    const spList=(r.sp_kod||[]).slice(0,5).join(', ');
+    const nowBadge=isCurrent?'<span style="background:#fef9c3;color:#854d0e;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px">← MINGGU INI</span>':'';
+    const bukanOpts=HARI_BUKAN_AK.map(o=>'<option value="'+o+'" '+(r.catatan_bukan_ak===o?'selected':'')+'>'+o+'</option>').join('');
+    const bukanSel=isBukan?('<select class="inp" style="margin-top:6px;font-size:11px" onchange="updateCatatanBukanAk(\''+r.id+'\',this.value)"><option value="">-- Jenis --</option>'+bukanOpts+'</select>'):'';
+    return '<div class="'+cls+'" id="rw-'+r.id+'">'+
+      '<div class="rpt-week-hdr">'+
+      '<div class="'+badgeCls+'">'+badgeLbl+'</div>'+
+      '<div class="rpt-week-info">'+
+      '<div class="rpt-wtajuk">'+esc(isBukan?'BUKAN AKADEMIK':(r.tajuk||''))+'</div>'+
+      '<div class="rpt-wmeta">Minggu Persekolahan '+r.minggu+' &nbsp;•&nbsp; '+fmtDate(r.tarikh_mula)+' – '+fmtDate(r.tarikh_tamat)+nowBadge+'</div>'+
+      (r.tema&&!isBukan?'<div class="rpt-wmeta" style="color:var(--pur);margin-top:2px">Tema: '+esc(r.tema)+'</div>':'')+
+      (spList&&!isBukan?'<div class="rpt-wmeta" style="margin-top:2px">SP: '+esc(spList)+'</div>':'')+
+      '</div></div>'+
+      bukanSel+
+      '<div class="rpt-week-acts">'+
+      (isBukan
+        ?'<button class="rpt-wbtn" style="background:#d1fae5;color:#059669" onclick="toggleBukanAk(\''+r.id+'\',false)">✅ Jadikan Akademik</button>'
+        :'<button class="rpt-wbtn" style="background:#fee2e2;color:#dc2626" onclick="toggleBukanAk(\''+r.id+'\',true)">🚫 Bukan Akademik</button>')+
+      (!isBukan&&!isDone?'<button class="rpt-wbtn" style="background:#d1fae5;color:#059669" onclick="markRPTSelesai(\''+r.id+'\')">✅ Selesai</button>':'')+
+      (!isBukan&&isDone?'<span class="rpt-wbtn" style="background:#d1fae5;color:#059669;cursor:default">✅ Selesai</span>':'')+
+      '</div>'+
+      '</div>';
   }).join('');
+}
+
+async function toggleBukanAk(id,isBukan){
+  const{error}=await db.from('rpt').update({bukan_akademik:isBukan,catatan_bukan_ak:isBukan?'':null}).eq('id',id);
+  if(error){toast('Ralat: '+error.message,'err');return;}
+  lihatRPT();
+}
+
+async function updateCatatanBukanAk(id,val){
+  await db.from('rpt').update({catatan_bukan_ak:val}).eq('id',id);
+}
+
+async function markRPTSelesai(id){
+  const{error}=await db.from('rpt').update({status:'selesai'}).eq('id',id);
+  if(error){toast('Ralat: '+error.message,'err');return;}
+  lihatRPT();
 }
 
 async function printRPT(){
@@ -1678,21 +1773,66 @@ async function printRPT(){
   const{data}=await db.from('rpt').select('*').eq('kelas_id',kId).eq('subjek',subj).eq('tahun_pelajaran',2026).order('minggu');
   if(!data?.length){toast('Tiada RPT. Jana dahulu.','err');return;}
   const k=S.kelas.find(x=>x.id===kId);
+  const akTotal=data.filter(r=>!r.bukan_akademik).length;
+  const bukanTotal=data.filter(r=>r.bukan_akademik).length;
+  let akNum=0;
+  const rows=data.map(r=>{
+    if(!r.bukan_akademik)akNum++;
+    const isBukan=r.bukan_akademik;
+    const isDone=r.status==='selesai';
+    const rowBg=isBukan?'background:#f1f5f9;color:#64748b;':isDone?'background:#f0fdf4;':'';
+    const akCell=isBukan?'<span style="color:#94a3b8">–</span>':('<strong>'+akNum+'</strong>');
+    const tajukCell=isBukan?('<em style="color:#94a3b8">'+(r.catatan_bukan_ak||'Bukan Akademik')+'</em>'):('<span style="font-weight:600">'+esc(r.tajuk)+'</span>');
+    const spCell=isBukan?'':esc((r.sp_kod||[]).join(', '));
+    const statusCell=isBukan?'<span style="color:#94a3b8;font-size:10px">–</span>':(isDone?'<span style="color:#059669;font-weight:700">✓</span>':'<span style="color:#94a3b8">○</span>');
+    return '<tr style="'+rowBg+'"><td style="text-align:center">'+r.minggu+'</td><td style="text-align:center">'+akCell+'</td>'+
+      '<td>'+fmtDate(r.tarikh_mula)+'<br><span style="color:#64748b">'+fmtDate(r.tarikh_tamat)+'</span></td>'+
+      '<td style="color:#6d28d9">'+esc(r.tema||'–')+'</td>'+
+      '<td>'+tajukCell+'</td>'+
+      '<td style="font-size:9px">'+spCell+'</td>'+
+      '<td style="text-align:center">'+statusCell+'</td></tr>';
+  }).join('');
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>RPT</title>
-  <style>body{font-family:Arial,sans-serif;font-size:11px;padding:16px}h1{font-size:14px;font-weight:bold;text-align:center}
-  table{width:100%;border-collapse:collapse}th{background:#1d4ed8;color:#fff;padding:5px 6px;text-align:left;font-size:10px}
-  td{padding:4px 6px;border:1px solid #ddd;vertical-align:top;font-size:10px}
-  footer{text-align:center;font-size:9px;color:#666;margin-top:10px}@media print{button{display:none}}</style></head><body>
-  <h1>RANCANGAN PENGAJARAN TAHUNAN (RPT) 2026</h1>
-  <p style="text-align:center;font-size:11px">${esc(k?.nama||'–')} • ${esc(subj)} • SK Sokor</p>
-  <table><thead><tr><th>Mg</th><th>Tarikh</th><th>Tema</th><th>Tajuk</th><th>SP</th><th>Status</th></tr></thead><tbody>
-  ${data.map(r=>`<tr><td>${r.minggu}</td><td>${fmtDate(r.tarikh_mula)}<br>${fmtDate(r.tarikh_tamat)}</td>
-  <td>${esc(r.tema||'–')}</td><td>${esc(r.tajuk)}</td>
-  <td>${(r.sp_kod||[]).join(', ')}</td><td>${r.status==='selesai'?'✅':'–'}</td></tr>`).join('')}
-  </tbody></table>
-  <footer>GuruEase v2.0 © 2026 • Dicetak: ${new Date().toLocaleString('ms-MY')}</footer>
-  <script>window.onload=()=>window.print();<\/script></body></html>`);
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>RPT 2026</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:10px;color:#1e293b;background:#fff}'+
+    '.pg{padding:20px 24px}'+
+    '.school-hdr{text-align:center;margin-bottom:16px;border-bottom:3px solid #1d4ed8;padding-bottom:12px}'+
+    '.school-hdr h1{font-size:14px;font-weight:900;color:#1d4ed8;letter-spacing:.5px;margin-bottom:2px}'+
+    '.school-hdr h2{font-size:12px;font-weight:700;color:#1e293b;margin-bottom:4px}'+
+    '.school-hdr p{font-size:10px;color:#64748b}'+
+    '.stat-row{display:flex;gap:12px;margin-bottom:14px;justify-content:center}'+
+    '.stat-box{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:6px 14px;text-align:center}'+
+    '.stat-num{font-size:18px;font-weight:800;color:#0369a1}'+
+    '.stat-lbl{font-size:9px;color:#0369a1}'+
+    'table{width:100%;border-collapse:collapse;margin-bottom:14px}'+
+    'thead th{background:#1d4ed8;color:#fff;padding:6px 8px;font-size:9px;font-weight:700;text-align:left;position:sticky;top:0}'+
+    'thead th:first-child,thead th:nth-child(2){text-align:center}'+
+    'tbody tr{border-bottom:1px solid #e2e8f0}'+
+    'tbody tr:hover{background:#f8fafc}'+
+    'td{padding:5px 7px;vertical-align:top}'+
+    '.footer{text-align:center;font-size:8px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px}'+
+    '@media print{.no-print{display:none}body{font-size:9px}thead th{font-size:8px}td{padding:4px 6px}}</style></head><body>'+
+    '<div class="pg">'+
+    '<div class="no-print" style="margin-bottom:12px;display:flex;gap:8px">'+
+    '<button onclick="window.print()" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer">🖨️ Cetak / Simpan PDF</button>'+
+    '<button onclick="window.close()" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer">✕ Tutup</button></div>'+
+    '<div class="school-hdr">'+
+    '<h1>RANCANGAN PENGAJARAN TAHUNAN (RPT)</h1>'+
+    '<h2>'+esc(subj)+' — '+esc(k?.nama||'–')+'</h2>'+
+    '<p>SK Sokor, Jeli, Kelantan &nbsp;|&nbsp; Tahun Pelajaran 2026</p></div>'+
+    '<div class="stat-row">'+
+    '<div class="stat-box"><div class="stat-num">'+akTotal+'</div><div class="stat-lbl">Minggu Akademik</div></div>'+
+    '<div class="stat-box" style="background:#f8fafc;border-color:#e2e8f0"><div class="stat-num" style="color:#64748b">'+bukanTotal+'</div><div class="stat-lbl" style="color:#64748b">Bukan Akademik</div></div>'+
+    '<div class="stat-box" style="background:#f0fdf4;border-color:#bbf7d0"><div class="stat-num" style="color:#059669">'+data.length+'</div><div class="stat-lbl" style="color:#059669">Jumlah Minggu</div></div>'+
+    '</div>'+
+    '<table><thead><tr>'+
+    '<th style="width:32px">Mg Sek</th><th style="width:32px">Mg Ak</th>'+
+    '<th style="width:100px">Tarikh</th><th style="width:90px">Tema</th>'+
+    '<th>Tajuk / Standard Kandungan</th><th style="width:90px">Standard Pembelajaran</th>'+
+    '<th style="width:36px;text-align:center">Status</th></tr></thead><tbody>'+
+    rows+'</tbody></table>'+
+    '<div class="footer">GuruEase © 2026 SK Sokor &nbsp;|&nbsp; Dicetak: '+new Date().toLocaleString('ms-MY')+'</div>'+
+    '</div></body></html>');
   w.document.close();
 }
 
@@ -1881,6 +2021,60 @@ function printLaporanGB(){
   w.document.close();
 }
 
+// ── PENGURUSAN STAF ────────────────────────────────────────────
+function openDaftarStaf(){q('#staf-modal').classList.remove('hidden');showStafSenarai();}
+function closeStafModal(){q('#staf-modal').classList.add('hidden');}
+function showStafDaftar(){
+  q('#staf-form-sec').classList.remove('hidden');q('#staf-list-sec').classList.add('hidden');
+  q('#stab1').classList.add('on');q('#stab2').classList.remove('on');
+}
+function showStafSenarai(){
+  q('#staf-form-sec').classList.add('hidden');q('#staf-list-sec').classList.remove('hidden');
+  q('#stab1').classList.remove('on');q('#stab2').classList.add('on');
+  loadStafSenarai();
+}
+async function loadStafSenarai(){
+  q('#staf-list-cont').innerHTML='<div style="text-align:center;padding:20px"><div class="sp"></div></div>';
+  const{data,error}=await db.from('profiles').select('*').order('nama');
+  if(error||!data?.length){q('#staf-list-cont').innerHTML='<div class="empty" style="padding:20px"><div class="ei">👤</div><p>Tiada staf berdaftar.</p></div>';return;}
+  const jawatanIco={'Guru Besar':'🏫','Penolong Kanan':'📋','PK HEM':'💙','PK Kokurikulum':'⚽','Guru':'📚','Guru Prasekolah':'🌱','Pembantu Pengurusan Murid':'🤝'};
+  q('#staf-list-cont').innerHTML='<p style="font-size:11px;color:var(--m);margin-bottom:10px">'+data.length+' staf berdaftar</p>'+
+    data.map(p=>{
+      const ico=jawatanIco[p.jawatan||'Guru']||'👤';
+      const isMe=p.id===S.user?.id;
+      return '<div class="staf-card">'+
+        '<div class="staf-av">'+ico+'</div>'+
+        '<div style="flex:1;min-width:0">'+
+        '<div class="staf-nama">'+esc(p.nama||'–')+(isMe?' <span style="font-size:10px;color:var(--g)">(Saya)</span>':'')+'</div>'+
+        '<div class="staf-meta">'+esc(p.emel||p.email||'–')+(p.no_tel?'&nbsp;•&nbsp;'+esc(p.no_tel):'')+'</div>'+
+        '</div>'+
+        '<span class="jawatan-tag">'+esc(p.jawatan||'Guru')+'</span>'+
+        '</div>';
+    }).join('');
+}
+async function daftarStafBaharu(){
+  const nama=q('#staf-nama').value.trim();
+  const emel=q('#staf-emel').value.trim();
+  const jawatan=q('#staf-jawatan').value;
+  const tel=q('#staf-tel').value.trim();
+  const pwd=q('#staf-pwd').value;
+  if(!nama){toast('Masukkan nama guru.','err');return;}
+  if(!emel||!emel.includes('@')){toast('Masukkan emel yang sah.','err');return;}
+  if(pwd.length<6){toast('Password min 6 aksara.','err');return;}
+  hov('Mendaftar akaun...');
+  const{data,error}=await db.auth.signUp({email:emel,password:pwd,options:{data:{nama,jawatan}}});
+  if(error){hov();toast('Ralat: '+error.message,'err',5000);return;}
+  if(data?.user){
+    // Insert/update profile
+    await db.from('profiles').upsert({id:data.user.id,nama,jawatan,no_tel:tel||null,emel},
+      {onConflict:'id'});
+  }
+  hov();
+  q('#staf-nama').value='';q('#staf-emel').value='';q('#staf-tel').value='';q('#staf-pwd').value='';
+  toast('Akaun '+nama+' berjaya didaftarkan!','ok');
+  showStafSenarai();
+}
+
 // ── PROFIL ─────────────────────────────────────────────────────
 function renderProfil(){
   const p=S.profile;
@@ -1891,6 +2085,7 @@ function renderProfil(){
   const admin=isAdmin();
   q('#card-semakan')?.classList.toggle('hidden',!admin);
   q('#card-laporan-gb')?.classList.toggle('hidden',!admin);
+  q('#card-daftar-staf')?.classList.toggle('hidden',!admin);
 }
 function toggleDark(){S.dark=!S.dark;document.body.classList.toggle('dark',S.dark);if(q('#dkt'))q('#dkt').classList.toggle('on',S.dark);}
 
@@ -1922,5 +2117,56 @@ db.auth.onAuthStateChange((event,session)=>{
   else{_loginShown=true;safeShowLogin();}
 })();
 </script>
+
+<!-- MODAL PENGURUSAN STAF -->
+<div id="staf-modal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-hdr">
+      <h3>👥 Pengurusan Staf</h3>
+      <button class="modal-close" onclick="closeStafModal()">✕</button>
+    </div>
+    <div class="tpills" style="margin-bottom:12px">
+      <button class="tpill on" id="stab1" onclick="showStafDaftar()">➕ Daftar Baharu</button>
+      <button class="tpill" id="stab2" onclick="showStafSenarai()">📋 Senarai Staf</button>
+    </div>
+
+    <!-- Borang Daftar -->
+    <div id="staf-form-sec">
+      <div class="fstack">
+        <div><label class="lbl">Nama Penuh</label>
+          <input type="text" id="staf-nama" class="inp" placeholder="Cth: Ahmad bin Ali"></div>
+        <div><label class="lbl">Emel</label>
+          <input type="email" id="staf-emel" class="inp" placeholder="guru@gmail.com"></div>
+        <div class="row2">
+          <div><label class="lbl">Jawatan</label>
+            <select id="staf-jawatan" class="inp">
+              <option value="Guru">Guru</option>
+              <option value="Penolong Kanan">Penolong Kanan (PK)</option>
+              <option value="PK HEM">PK HEM</option>
+              <option value="PK Kokurikulum">PK Kokurikulum</option>
+              <option value="Guru Besar">Guru Besar</option>
+              <option value="Guru Prasekolah">Guru Prasekolah</option>
+              <option value="Pembantu Pengurusan Murid">PPM</option>
+            </select></div>
+          <div><label class="lbl">No. Telefon</label>
+            <input type="tel" id="staf-tel" class="inp" placeholder="01X-XXXXXXX"></div>
+        </div>
+        <div><label class="lbl">Password Sementara</label>
+          <div style="position:relative">
+            <input type="password" id="staf-pwd" class="inp" placeholder="Min 6 aksara" style="padding-right:40px">
+            <button type="button" onclick="q('#staf-pwd').type=q('#staf-pwd').type==='password'?'text':'password'" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px">👁️</button>
+          </div>
+          <p style="font-size:10px;color:var(--m);margin-top:4px">⚠️ Kongsikan password ini dengan guru berkenaan. Guru boleh tukar kemudian.</p>
+        </div>
+      </div>
+      <button class="btn bg2" style="width:100%;margin-top:12px" onclick="daftarStafBaharu()">✅ Daftar Akaun Guru</button>
+    </div>
+
+    <!-- Senarai Staf -->
+    <div id="staf-list-sec" class="hidden">
+      <div id="staf-list-cont"><div style="text-align:center;padding:20px"><div class="sp"></div></div></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
