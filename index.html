@@ -222,6 +222,21 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
 .rpt-cnt-num{font-size:20px;font-weight:800;line-height:1.1}
 .rpt-cnt-lbl{font-size:10px;color:var(--m);margin-top:2px}
 .rpt-hint-bar{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #c4b5fd;border-radius:10px;padding:10px 13px;font-size:12px;color:#5b21b6;margin-bottom:10px;line-height:1.5}
+/* OPR ENHANCED */
+.opr-type-sel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.opr-type-btn{background:var(--s);border:2px solid transparent;border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;box-shadow:var(--sh);transition:all .2s}
+.opr-type-btn.active{border-color:var(--p);background:#eff6ff}
+.opr-type-btn .otb-ico{font-size:26px;margin-bottom:6px}
+.opr-type-btn .otb-lbl{font-size:12px;font-weight:700;color:var(--t)}
+.opr-type-btn .otb-desc{font-size:10px;color:var(--m);margin-top:3px;line-height:1.3}
+.photo-upload-area{border:2px dashed #cbd5e1;border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s)}
+.photo-upload-area:hover{border-color:var(--p);background:#eff6ff}
+.photo-preview-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.photo-thumb{position:relative;width:90px;height:90px;border-radius:8px;overflow:hidden;box-shadow:var(--sh)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-del{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.opr-prog-hdr{background:linear-gradient(135deg,#1d4ed8,#6d28d9);color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:12px;position:relative;overflow:hidden}
+.opr-prog-hdr::after{content:'';position:absolute;right:-20px;top:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.08)}
 /* PBD */
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .mc{background:var(--s);border-radius:var(--rad);padding:13px 10px;text-align:center;cursor:pointer;box-shadow:var(--sh);border:2px solid transparent;transition:all .15s}
@@ -514,69 +529,153 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
       <!-- OPR SECTION -->
       <div id="opr-sec" class="hidden">
         <div class="tpills" style="margin-bottom:12px">
-          <button class="tpill on" id="opf" onclick="showOPRForm()">📝 Borang OPR</button>
-          <button class="tpill" id="opl" onclick="showOPRList()">📂 Rekod OPR</button>
+          <button class="tpill on" id="opf" onclick="showOPRForm()">📝 Laporan OPR</button>
+          <button class="tpill" id="opl" onclick="showOPRList()">📂 Rekod</button>
         </div>
 
-        <!-- BORANG OPR -->
+        <!-- BORANG OPR BERSEPADU -->
         <div id="opr-form">
+          <!-- LANGKAH 1: JENIS -->
           <div class="wiz-step">
-            <div class="wiz-hdr"><div class="wiz-num" style="background:#d97706">!</div><h3>One Page Report (OPR)</h3></div>
-            <p style="font-size:12px;color:var(--m);margin-bottom:12px">Isi borang ini apabila PDPc tidak dapat dilaksanakan seperti dirancang.</p>
-            <div class="fstack">
-              <div><label class="lbl">Kelas</label>
-                <select id="opr-kelas" class="inp"><option value="">-- Pilih Kelas --</option></select></div>
-              <div class="row2">
-                <div><label class="lbl">Tarikh</label><input type="date" id="opr-tarikh" class="inp"></div>
-                <div><label class="lbl">Waktu PDPc</label>
-                  <select id="opr-waktu" class="inp">
-                    <option value="07:30-08:00">07:30 – 08:00</option>
-                    <option value="08:00-08:30">08:00 – 08:30</option>
-                    <option value="08:30-09:00">08:30 – 09:00</option>
-                    <option value="09:00-09:30">09:00 – 09:30</option>
-                    <option value="09:30-10:00">09:30 – 10:00</option>
-                    <option value="10:30-11:00">10:30 – 11:00</option>
-                    <option value="11:00-11:30">11:00 – 11:30</option>
-                    <option value="11:30-12:00">11:30 – 12:00</option>
-                    <option value="12:00-12:30">12:00 – 12:30</option>
-                  </select>
-                </div>
+            <div class="wiz-hdr"><div class="wiz-num" style="background:#6d28d9">1</div><h3>Jenis Kejadian Hari Ini</h3></div>
+            <div class="opr-type-sel">
+              <div class="opr-type-btn active" id="ojenis-guru" onclick="setOPRJenis('guru')">
+                <div class="otb-ico">🏃</div><div class="otb-lbl">Guru Tidak Mengajar</div>
+                <div class="otb-desc">Kursus, mesyuarat, cuti, sakit dll</div>
               </div>
-              <div><label class="lbl">Sebab PDPc Tidak Berlaku</label>
-                <select id="opr-sebab" class="inp" onchange="toggleSebabLain()">
-                  <option value="">-- Pilih Sebab --</option>
-                  <option value="Guru menghadiri mesyuarat sekolah">Guru menghadiri mesyuarat sekolah</option>
-                  <option value="Guru menghadiri kursus/taklimat">Guru menghadiri kursus / taklimat</option>
-                  <option value="Guru cuti sakit">Guru cuti sakit</option>
-                  <option value="Guru cuti khas/tanggung kerja">Guru cuti khas / tanggung kerja</option>
-                  <option value="Murid terlibat dalam aktiviti sekolah">Murid terlibat dalam aktiviti sekolah</option>
-                  <option value="Peperiksaan / Ujian bulanan">Peperiksaan / Ujian bulanan</option>
-                  <option value="Program / Majlis sekolah">Program / Majlis sekolah</option>
-                  <option value="Gangguan luar biasa (cuaca, dll)">Gangguan luar biasa (cuaca, dll)</option>
-                  <option value="lain">Lain-lain (nyatakan)</option>
-                </select>
+              <div class="opr-type-btn" id="ojenis-program" onclick="setOPRJenis('program')">
+                <div class="otb-ico">🎯</div><div class="otb-lbl">Program / Aktiviti</div>
+                <div class="otb-desc">Sukan, majlis, program sekolah dll</div>
               </div>
-              <div id="opr-lain-div" class="hidden">
-                <label class="lbl">Nyatakan Sebab</label>
-                <input type="text" id="opr-sebab-lain" class="inp" placeholder="Huraikan sebab...">
+              <div class="opr-type-btn" id="ojenis-murid" onclick="setOPRJenis('murid')">
+                <div class="otb-ico">🎒</div><div class="otb-lbl">Murid Tidak Hadir</div>
+                <div class="otb-desc">Kelas kosong, murid ke program dll</div>
               </div>
-              <div><label class="lbl">Tindakan Alternatif Diambil</label>
-                <select id="opr-tindakan" class="inp">
-                  <option value="">-- Pilih Tindakan --</option>
-                  <option value="Murid diberi kerja sendiri / latihan">Murid diberi kerja sendiri / latihan</option>
-                  <option value="Murid belajar secara kendiri dengan buku teks">Murid belajar secara kendiri dengan buku teks</option>
-                  <option value="Guru ganti mengambil alih kelas">Guru ganti mengambil alih kelas</option>
-                  <option value="PDPc akan diganti pada tarikh lain">PDPc akan diganti pada tarikh lain</option>
-                  <option value="Murid diberi aktiviti pengukuhan">Murid diberi aktiviti pengukuhan</option>
-                  <option value="Kelas digabungkan dengan kelas lain">Kelas digabungkan dengan kelas lain</option>
-                </select>
-              </div>
-              <div><label class="lbl">Catatan Tambahan (pilihan)</label>
-                <textarea id="opr-catatan" class="inp" rows="2" placeholder="Maklumat tambahan jika ada..."></textarea>
+              <div class="opr-type-btn" id="ojenis-luar" onclick="setOPRJenis('luar')">
+                <div class="otb-ico">⚡</div><div class="otb-lbl">Keadaan Luar Biasa</div>
+                <div class="otb-desc">Banjir, elektrik, darurat dll</div>
               </div>
             </div>
           </div>
-          <button class="btn bw" onclick="simpanOPR()">💾 Simpan OPR</button>
+
+          <!-- LANGKAH 2: TARIKH & MASA -->
+          <div class="wiz-step">
+            <div class="wiz-hdr"><div class="wiz-num" style="background:#6d28d9">2</div><h3>Tarikh &amp; Masa</h3></div>
+            <div class="row2">
+              <div><label class="lbl">Tarikh</label>
+                <input type="date" id="opr-tarikh" class="inp" onchange="loadOPRKelas()"></div>
+              <div><label class="lbl">Masa (pilihan)</label>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <input type="time" id="opr-masa-mula" class="inp" style="flex:1">
+                  <span style="font-size:11px;color:var(--m)">–</span>
+                  <input type="time" id="opr-masa-tamat" class="inp" style="flex:1">
+                </div></div>
+            </div>
+          </div>
+
+          <!-- LANGKAH 3A: Guru tidak mengajar -->
+          <div id="opr-det-guru" class="wiz-step">
+            <div class="wiz-hdr"><div class="wiz-num" style="background:#6d28d9">3</div><h3>Butiran</h3></div>
+            <div class="fstack">
+              <div><label class="lbl">Sebab Tidak Mengajar</label>
+                <select id="opr-sebab" class="inp" onchange="toggleSebabLain()">
+                  <option value="">-- Pilih Sebab --</option>
+                  <option value="Menghadiri kursus / latihan">📚 Menghadiri kursus / latihan</option>
+                  <option value="Menghadiri mesyuarat">🗣️ Menghadiri mesyuarat</option>
+                  <option value="Cuti sakit">🏥 Cuti sakit</option>
+                  <option value="Cuti rehat / tahunan">🏖️ Cuti rehat / tahunan</option>
+                  <option value="Cuti khas / tanggung kerja">📋 Cuti khas / tanggung kerja</option>
+                  <option value="Menghadiri program sekolah">🏫 Menghadiri program sekolah</option>
+                  <option value="lain">✏️ Lain-lain</option>
+                </select></div>
+              <div id="opr-lain-div" class="hidden"><label class="lbl">Nyatakan</label>
+                <input type="text" id="opr-sebab-lain" class="inp" placeholder="Hurai sebab..."></div>
+              <div><label class="lbl">Tindakan Untuk Kelas</label>
+                <select id="opr-tindakan" class="inp">
+                  <option value="">-- Pilih Tindakan --</option>
+                  <option value="Murid diberi kerja sendiri / latihan">Murid diberi kerja sendiri / latihan</option>
+                  <option value="Murid belajar secara kendiri">Murid belajar secara kendiri</option>
+                  <option value="Guru ganti mengambil alih">Guru ganti mengambil alih</option>
+                  <option value="Kelas digabungkan">Kelas digabungkan</option>
+                  <option value="PDPc akan diganti tarikh lain">PDPc akan diganti tarikh lain</option>
+                </select></div>
+            </div>
+          </div>
+
+          <!-- LANGKAH 3B: Program -->
+          <div id="opr-det-program" class="wiz-step hidden">
+            <div class="wiz-hdr"><div class="wiz-num" style="background:#6d28d9">3</div><h3>Maklumat Program</h3></div>
+            <div class="fstack">
+              <div><label class="lbl">Tajuk Program</label>
+                <input type="text" id="prog-tajuk" class="inp" placeholder="Cth: Hari Sukan Tahunan 2026"></div>
+              <div class="row2">
+                <div><label class="lbl">Tempat</label>
+                  <input type="text" id="prog-tempat" class="inp" placeholder="Cth: Padang Sekolah"></div>
+                <div><label class="lbl">Bil. Peserta</label>
+                  <input type="number" id="prog-peserta" class="inp" placeholder="0" min="0"></div>
+              </div>
+              <div><label class="lbl">Jenis Program</label>
+                <select id="prog-jenis" class="inp">
+                  <option value="Sukan / Permainan">🏅 Sukan / Permainan</option>
+                  <option value="Akademik / Kurikulum">📚 Akademik / Kurikulum</option>
+                  <option value="Keagamaan / Rohani">🕌 Keagamaan / Rohani</option>
+                  <option value="Kemasyarakatan / Khidmat">🤝 Kemasyarakatan / Khidmat</option>
+                  <option value="Kebudayaan / Kesenian">🎭 Kebudayaan / Kesenian</option>
+                  <option value="Kokurikulum">⚽ Kokurikulum</option>
+                  <option value="Lain-lain">📋 Lain-lain</option>
+                </select></div>
+              <div><label class="lbl">Aktiviti Yang Dijalankan</label>
+                <textarea id="prog-aktiviti" class="inp" rows="3" placeholder="Nyatakan aktiviti utama..."></textarea></div>
+              <div><label class="lbl">Impak / Pencapaian</label>
+                <textarea id="prog-impak" class="inp" rows="2" placeholder="Impak positif, pencapaian atau hasil..."></textarea></div>
+              <div><label class="lbl">📷 Gambar (maks 3)</label>
+                <div class="photo-upload-area" onclick="q('#prog-foto-input').click()">
+                  <div style="font-size:24px">📷</div>
+                  <div style="font-size:12px;font-weight:600;margin-top:4px">Klik untuk pilih gambar</div>
+                  <div style="font-size:10px;color:var(--m);margin-top:2px">JPG/PNG • Auto-mampat</div>
+                </div>
+                <input type="file" id="prog-foto-input" accept="image/*" multiple style="display:none" onchange="handleFotoUpload(this)">
+                <div id="prog-foto-preview" class="photo-preview-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LANGKAH 3C: Murid tidak hadir -->
+          <div id="opr-det-murid" class="wiz-step hidden">
+            <div class="wiz-hdr"><div class="wiz-num" style="background:#6d28d9">3</div><h3>Butiran</h3></div>
+            <div><label class="lbl">Sebab Murid Tidak Hadir</label>
+              <select id="opr-sebab-murid" class="inp">
+                <option value="Murid mengikuti program sekolah">Murid mengikuti program sekolah</option>
+                <option value="Murid mengikuti pertandingan">Murid mengikuti pertandingan</option>
+                <option value="Murid mengikuti lawatan">Murid mengikuti lawatan</option>
+                <option value="Kelas tangguh kerana peperiksaan">Kelas tangguh kerana peperiksaan</option>
+                <option value="lain-murid">Lain-lain</option>
+              </select></div>
+          </div>
+
+          <!-- LANGKAH 3D: Luar Biasa -->
+          <div id="opr-det-luar" class="wiz-step hidden">
+            <div class="wiz-hdr"><div class="wiz-num" style="background:#6d28d9">3</div><h3>Butiran</h3></div>
+            <div><label class="lbl">Huraikan Kejadian</label>
+              <textarea id="opr-hurai" class="inp" rows="3" placeholder="Cth: Bekalan elektrik terputus, kawasan banjir..."></textarea></div>
+          </div>
+
+          <!-- LANGKAH 4: KELAS TERJEJAS -->
+          <div class="wiz-step">
+            <div class="wiz-hdr"><div class="wiz-num" style="background:#dc2626">4</div><h3>Kelas Yang Terjejas Hari Ini</h3></div>
+            <p style="font-size:11px;color:var(--m);margin-bottom:10px">⚠️ RPH kelas yang ditandakan akan ditukar kepada status <strong>Tangguh</strong> secara automatik.</p>
+            <div id="opr-kelas-list" style="display:flex;flex-direction:column;gap:6px">
+              <div style="text-align:center;padding:10px;font-size:12px;color:var(--m)">Pilih tarikh dahulu...</div>
+            </div>
+          </div>
+
+          <!-- LANGKAH 5: CATATAN -->
+          <div class="wiz-step">
+            <div class="wiz-hdr"><div class="wiz-num" style="background:#6d28d9">5</div><h3>Catatan (pilihan)</h3></div>
+            <textarea id="opr-catatan" class="inp" rows="2" placeholder="Maklumat tambahan..."></textarea>
+          </div>
+
+          <button class="btn" style="width:100%;background:linear-gradient(135deg,#6d28d9,#1d4ed8);color:#fff;font-weight:700;font-size:14px;padding:14px" onclick="simpanOPR()">💾 Simpan OPR &amp; Tangguhkan RPH</button>
         </div>
 
         <!-- SENARAI OPR -->
@@ -587,6 +686,8 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
     </section>
 
     <!-- PBD -->
+    <section id="t-pbd" class="hidden">
+      <div class="tpills">
     <section id="t-pbd" class="hidden">
       <div class="tpills">
         <button class="tpill on" id="pbd-p1" onclick="showPBDRekod()">🎯 Rekod PBD</button>
@@ -1386,85 +1487,259 @@ function goToPBDFromRPH(){
 }
 
 // ── OPR MODULE ─────────────────────────────────────────────────
-function showOPRForm(){q('#opr-form').classList.remove('hidden');q('#opr-list-sec').classList.add('hidden');q('#opf')?.classList.add('on');q('#opl')?.classList.remove('on');}
-function showOPRList(){q('#opr-form').classList.add('hidden');q('#opr-list-sec').classList.remove('hidden');q('#opl')?.classList.add('on');q('#opf')?.classList.remove('on');loadOPRList();}
+function showOPRForm(){
+  q('#opr-form').classList.remove('hidden');q('#opr-list-sec').classList.add('hidden');
+  q('#opf')?.classList.add('on');q('#opl')?.classList.remove('on');
+  const today=todayStr();if(q('#opr-tarikh')&&!q('#opr-tarikh').value)q('#opr-tarikh').value=today;
+  loadOPRKelas();
+}
+function showOPRList(){
+  q('#opr-form').classList.add('hidden');q('#opr-list-sec').classList.remove('hidden');
+  q('#opl')?.classList.add('on');q('#opf')?.classList.remove('on');loadOPRList();
+}
 function toggleSebabLain(){q('#opr-lain-div').classList.toggle('hidden',q('#opr-sebab').value!=='lain');}
 
+let _oprJenis='guru';
+function setOPRJenis(j){
+  _oprJenis=j;
+  ['guru','prog','murid','luar'].forEach(t=>{
+    q('#ojenis-'+t)?.classList.toggle('active',t===j);
+    q('#opr-det-'+t)?.classList.toggle('hidden',t!==j);
+  });
+}
+
+// Load kelas with checkbox, show RPH status for selected date
+async function loadOPRKelas(){
+  const tarikh=q('#opr-tarikh').value;
+  const box=q('#opr-kelas-list');if(!box)return;
+  if(!tarikh){box.innerHTML='<div style="text-align:center;padding:10px;font-size:12px;color:var(--m)">Pilih tarikh dahulu...</div>';return;}
+  if(!S.kelas?.length){box.innerHTML='<div style="font-size:12px;color:var(--m)">Tiada kelas.</div>';return;}
+  // Check which classes have RPH on this date
+  const{data:rphHari}=await db.from('rph').select('id,kelas_id,subjek,status').eq('guru_id',S.user.id).eq('tarikh',tarikh);
+  const rphMap={};(rphHari||[]).forEach(r=>{if(!rphMap[r.kelas_id])rphMap[r.kelas_id]=[];rphMap[r.kelas_id].push(r);});
+  box.innerHTML=S.kelas.map(k=>{
+    const rList=rphMap[k.id]||[];
+    const hasRPH=rList.length>0;
+    const status=rList[0]?.status||'';
+    const isTangguh=status==='tangguh';
+    const badge=hasRPH?('<span style="font-size:10px;padding:2px 7px;border-radius:10px;'+(isTangguh?'background:#fef9c3;color:#a16207':'background:#d1fae5;color:#059669')+'">'+( isTangguh?'⏸ Tangguh':'✅ Ada RPH')+'</span>'):'<span style="font-size:10px;color:#94a3b8">Tiada RPH hari ini</span>';
+    return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--s);border-radius:10px;box-shadow:var(--sh);cursor:pointer">'+
+      '<input type="checkbox" class="opr-kelas-cb" value="'+k.id+'" style="width:18px;height:18px;accent-color:var(--p)">'+
+      '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+esc(k.nama)+'</div></div>'+
+      badge+'</label>';
+  }).join('');
+}
+
+// FOTO UPLOAD
+let _fotoList=[];
+async function compressImage(file,maxPx=900,qual=0.72){
+  return new Promise(res=>{
+    const img=new Image();const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>maxPx||h>maxPx){const r=Math.min(maxPx/w,maxPx/h);w=Math.round(w*r);h=Math.round(h*r);}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg',qual));
+    };img.src=url;
+  });
+}
+async function handleFotoUpload(inp){
+  const files=Array.from(inp.files).slice(0,3-_fotoList.length);
+  if(!files.length){toast('Maks 3 gambar.','err');return;}
+  hov('Memproses gambar...');
+  for(const f of files){if(_fotoList.length>=3)break;_fotoList.push(await compressImage(f));}
+  hov();renderFotoPrev();inp.value='';
+}
+function renderFotoPrev(){
+  const box=q('#prog-foto-preview');if(!box)return;
+  box.innerHTML=_fotoList.map((b,i)=>'<div class="photo-thumb"><img src="'+b+'"><button class="photo-del" onclick="removeFoto('+i+')">✕</button></div>').join('');
+}
+function removeFoto(i){_fotoList.splice(i,1);renderFotoPrev();}
+
+// ── SIMPAN OPR BERSEPADU ────────────────────────────────────
 async function simpanOPR(){
   if(_saving)return;
-  const kId=q('#opr-kelas').value;const tarikh=q('#opr-tarikh').value;const waktu=q('#opr-waktu').value;
-  const sebabRaw=q('#opr-sebab').value;const sebabLain=q('#opr-sebab-lain').value.trim();const tindakan=q('#opr-tindakan').value;
-  if(!kId){_saving=false;toast('Pilih kelas.','err');return;}
-  if(!tarikh){_saving=false;toast('Pilih tarikh.','err');return;}
-  if(!sebabRaw){_saving=false;toast('Pilih sebab.','err');return;}
-  if(sebabRaw==='lain'&&!sebabLain){_saving=false;toast('Nyatakan sebab lain.','err');return;}
-  if(!tindakan){_saving=false;toast('Pilih tindakan alternatif.','err');return;}
+  const tarikh=q('#opr-tarikh').value;
+  if(!tarikh){toast('Pilih tarikh.','err');return;}
+  // Get selected kelas
+  const selectedKelas=Array.from(document.querySelectorAll('.opr-kelas-cb:checked')).map(cb=>cb.value);
+  // Build payload based on jenis
+  let sebab='',tindakan='',payload={};
+  if(_oprJenis==='guru'){
+    const s=q('#opr-sebab').value;const sl=q('#opr-sebab-lain').value.trim();
+    if(!s){toast('Pilih sebab.','err');return;}
+    sebab=s==='lain'?sl:s;
+    tindakan=q('#opr-tindakan').value;
+    if(!tindakan){toast('Pilih tindakan.','err');return;}
+  } else if(_oprJenis==='program'){
+    sebab=q('#prog-tajuk').value.trim();
+    if(!sebab){toast('Masukkan tajuk program.','err');return;}
+    tindakan=q('#prog-aktiviti').value.trim();
+    payload={tajuk_program:sebab,tempat:q('#prog-tempat').value.trim(),
+      bil_peserta:parseInt(q('#prog-peserta').value)||0,
+      jenis_program:q('#prog-jenis').value,
+      aktiviti_program:tindakan,impak:q('#prog-impak').value.trim(),
+      gambar:_fotoList.length?_fotoList:null};
+  } else if(_oprJenis==='murid'){
+    sebab=q('#opr-sebab-murid').value||'Murid tidak hadir';tindakan='–';
+  } else {
+    sebab=q('#opr-hurai').value.trim()||'Keadaan luar biasa';tindakan='–';
+  }
   _saving=true;hov('Menyimpan OPR...');
-  const _wArr=(waktu||'').split(/-(?=\d{2}:)/);
-  const wMula=_wArr[0]||null;const wTamat=_wArr[1]||null;
-  const sebab=sebabRaw==='lain'?sebabLain:sebabRaw;
-  const{error}=await db.from('opr').insert({
-    guru_id:S.user.id,kelas_id:kId,tarikh,waktu_mula:wMula,waktu_tamat:wTamat,
-    sebab,sebab_lain:sebabRaw==='lain'?sebabLain:null,tindakan,
-    catatan:q('#opr-catatan').value.trim(),status:'hantar'
-  });
+  const masaMula=q('#opr-masa-mula').value||null;
+  const masaTamat=q('#opr-masa-tamat').value||null;
+  // 1. Save OPR
+  const{data:oprRec,error:oprErr}=await db.from('opr').insert({
+    guru_id:S.user.id,kelas_id:selectedKelas[0]||null,tarikh,
+    waktu_mula:masaMula,waktu_tamat:masaTamat,
+    sebab,tindakan,catatan:q('#opr-catatan').value.trim(),
+    status:'hantar',jenis:_oprJenis,...payload
+  }).select().single();
+  if(oprErr){hov();_saving=false;toast('Gagal simpan OPR: '+oprErr.message,'err');return;}
+  // 2. Auto-tangguh RPH for selected kelas on this date
+  let tangguhCount=0;
+  if(selectedKelas.length){
+    const{error:tErr}=await db.from('rph').update({
+      status:'tangguh',
+      refleksi:'[OPR '+tarikh+'] '+sebab+'. Akan diganti pada waktu seterusnya.'
+    }).eq('guru_id',S.user.id).eq('tarikh',tarikh).in('kelas_id',selectedKelas).neq('status','tangguh');
+    if(!tErr){
+      // Count how many were tangguh-ed
+      const{data:ct}=await db.from('rph').select('id',{count:'exact'}).eq('guru_id',S.user.id).eq('tarikh',tarikh).in('kelas_id',selectedKelas).eq('status','tangguh');
+      tangguhCount=ct?.length||0;
+    }
+  }
   hov();_saving=false;
-  if(error){toast('Gagal simpan OPR: '+error.message,'err');return;}
-  toast('OPR berjaya disimpan!','ok');
-  q('#opr-sebab').value='';q('#opr-tindakan').value='';q('#opr-catatan').value='';q('#opr-lain-div').classList.add('hidden');
+  const msg=tangguhCount>0?'OPR disimpan! '+tangguhCount+' RPH ditandakan Tangguh.':'OPR berjaya disimpan!';
+  toast(msg,'ok',4000);
+  // Reset form
+  setOPRJenis('guru');
+  ['opr-tarikh','opr-masa-mula','opr-masa-tamat','opr-catatan','prog-tajuk','prog-tempat','prog-peserta','prog-aktiviti','prog-impak'].forEach(id=>{const el=q('#'+id);if(el)el.value='';});
+  q('#opr-sebab').value='';q('#opr-tindakan').value='';
+  q('#opr-lain-div').classList.add('hidden');
+  _fotoList=[];renderFotoPrev();
+  document.querySelectorAll('.opr-kelas-cb').forEach(cb=>cb.checked=false);
 }
 
 async function loadOPRList(){
   q('#opr-list-cont').innerHTML='<div style="text-align:center;padding:20px"><div class="sp"></div></div>';
-  const{data}=await db.from('opr').select('*,kelas(nama)').eq('guru_id',S.user.id).order('tarikh',{ascending:false}).limit(30);
+  const{data}=await db.from('opr').select('*,kelas(nama)').eq('guru_id',S.user.id).order('tarikh',{ascending:false}).limit(50);
   if(!data?.length){q('#opr-list-cont').innerHTML='<div class="empty"><div class="ei">📝</div><p>Tiada rekod OPR.</p></div>';return;}
   data.forEach(r=>_oprCache.set(r.id,r));
+  const jeIco={guru:'🏃',program:'🎯',murid:'🎒',luar:'⚡'};
+  const jeLbl={guru:'Guru Tidak Mengajar',program:'Program / Aktiviti',murid:'Murid Tidak Hadir',luar:'Keadaan Luar Biasa'};
   q('#opr-list-cont').innerHTML=data.map(r=>{
-    const kNama=r.kelas?.nama||S.kelas.find(x=>x.id===r.kelas_id)?.nama||'–';
-    return`<div class="rli">
-      <div class="rico" style="background:#fef9c3">📝</div>
-      <div class="ri" style="flex:1"><h4>${esc(r.sebab)}</h4>
-      <p>${esc(kNama)} • ${fmtDate(r.tarikh)}</p>
-      <p style="font-size:10px;color:var(--m)">${r.waktu_mula||'–'} – ${r.waktu_tamat||'–'} • ${esc(r.tindakan||'–')}</p>
-      <div class="rli-acts"><button class="rli-btn" style="background:#fef9c3;color:#a16207" onclick="printOPRById('${r.id}')">🖨️ PDF</button></div>
-      </div></div>`;
+    const ico=jeIco[r.jenis]||'📝';const jl=jeLbl[r.jenis]||r.jenis||'OPR';
+    const hasFoto=(r.gambar||[]).length>0;
+    const subj=r.jenis==='program'?(r.tajuk_program||r.sebab):r.sebab;
+    return '<div class="rli">'+
+      '<div class="rico" style="background:linear-gradient(135deg,#ede9fe,#dbeafe)">'+ico+'</div>'+
+      '<div class="ri" style="flex:1">'+
+      '<h4>'+esc(subj)+'</h4>'+
+      '<p style="font-size:11px;color:var(--m)">'+jl+' • '+fmtDate(r.tarikh)+'</p>'+
+      (r.waktu_mula?'<p style="font-size:10px;color:var(--m)">🕐 '+r.waktu_mula+(r.waktu_tamat?' – '+r.waktu_tamat:'')+'</p>':'')+
+      (hasFoto?'<p style="font-size:10px;color:#6d28d9">📷 '+(r.gambar.length)+' gambar</p>':'')+
+      '<div class="rli-acts">'+
+      '<button class="rli-btn" style="background:#ede9fe;color:#6d28d9" onclick="printOPRById(\''+r.id+'\')">🖨️ PDF</button>'+
+      '</div></div></div>';
   }).join('');
 }
 
 function printOPRById(id){
   const r=_oprCache.get(id);if(!r)return;
-  const k=S.kelas.find(x=>x.id===r.kelas_id);
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>OPR</title>
-  <style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}h1{font-size:14px;font-weight:bold;text-align:center}
-  .info{margin:10px 0}.info div{margin-bottom:5px}.k{font-weight:600}
-  .hr{border:none;border-top:1px solid #000;margin:8px 0}footer{text-align:center;font-size:10px;color:#666;margin-top:16px}
-  @media print{button{display:none}}</style></head><body>
-  <h1>ONE PAGE REPORT (OPR)</h1>
-  <p style="text-align:center;font-size:10px">SK Sokor, Tanah Merah, Kelantan</p>
-  <div class="hr"></div>
-  <div class="info">
-    <div><span class="k">Guru:</span> ${esc(S.profile?.nama||'–')}</div>
-    <div><span class="k">Kelas:</span> ${esc(k?.nama||'–')}</div>
-    <div><span class="k">Tarikh:</span> ${fmtDate(r.tarikh)}</div>
-    <div><span class="k">Waktu PDPc:</span> ${r.waktu_mula||'–'} – ${r.waktu_tamat||'–'}</div>
-  </div>
-  <div class="hr"></div>
-  <div class="info">
-    <div><span class="k">Sebab PDPc Tidak Berlaku:</span><br>${esc(r.sebab)}</div>
-  </div>
-  <div class="info" style="margin-top:8px">
-    <div><span class="k">Tindakan Alternatif:</span><br>${esc(r.tindakan||'–')}</div>
-  </div>
-  ${r.catatan?`<div class="info" style="margin-top:8px"><div><span class="k">Catatan:</span><br>${esc(r.catatan)}</div></div>`:''}
-  <div class="hr"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px">
-    <div style="text-align:center"><div style="border-top:1px solid #000;padding-top:4px;margin-top:40px">Tandatangan Guru</div></div>
-    <div style="text-align:center"><div style="border-top:1px solid #000;padding-top:4px;margin-top:40px">Tandatangan Guru Besar</div></div>
-  </div>
-  <footer>GuruEase v2.0 © 2026 • Dicetak: ${new Date().toLocaleString('ms-MY')}</footer>
-  <script>window.onload=()=>window.print();<\/script></body></html>`);
-  w.document.close();
+  r.jenis==='program'?printProgram(r):printOPR(r);
+}
+
+function printOPR(r){
+  const jeIco={guru:'🏃',murid:'🎒',luar:'⚡'};
+  const jeLbl={guru:'Guru Tidak Mengajar',murid:'Murid Tidak Hadir',luar:'Keadaan Luar Biasa'};
+  const css='*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1e293b}'+
+    '.pg{padding:22px 26px;max-width:700px;margin:0 auto}'+
+    '.hdr{background:linear-gradient(135deg,#6d28d9,#1d4ed8);color:#fff;border-radius:12px;padding:14px 18px;margin-bottom:16px}'+
+    '.hdr-sch{font-size:9px;opacity:.75;letter-spacing:.5px;margin-bottom:2px}'+
+    '.hdr-title{font-size:17px;font-weight:900}.hdr-jenis{font-size:10px;opacity:.8;margin-top:3px}'+
+    '.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}'+
+    '.ibox{background:#f8fafc;border-radius:8px;padding:9px 12px;border-left:3px solid #6d28d9}'+
+    '.ik{font-size:9px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}'+
+    '.iv{font-size:12px;font-weight:600}'+
+    '.sect{background:#faf5ff;border:1px solid #e9d5ff;border-radius:10px;padding:11px 14px;margin-bottom:10px}'+
+    '.sect-lbl{font-size:9px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}'+
+    '.sect-val{font-size:11px;line-height:1.7}'+
+    '.alert-box{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:#854d0e}'+
+    '.sign-row{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:24px}'+
+    '.sign-box{text-align:center}.sign-line{border-top:1px solid #94a3b8;margin-top:40px;padding-top:5px;font-size:10px;color:#64748b}'+
+    '.footer{text-align:center;font-size:8px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:14px}'+
+    '.no-print{margin-bottom:12px;display:flex;gap:8px}@media print{.no-print{display:none}}';
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>OPR</title><style>'+css+'</style></head><body><div class="pg">'+
+    '<div class="no-print"><button onclick="window.print()" style="background:linear-gradient(135deg,#6d28d9,#1d4ed8);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer">🖨️ Cetak PDF</button>'+
+    '<button onclick="window.close()" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer">✕ Tutup</button></div>'+
+    '<div class="hdr"><div class="hdr-sch">SK SOKOR &nbsp;•&nbsp; JELI, KELANTAN &nbsp;•&nbsp; ONE PAGE REPORT</div>'+
+    '<div class="hdr-title">LAPORAN OPR — '+esc(jeLbl[r.jenis]||'OPR')+'</div>'+
+    '<div class="hdr-jenis">'+esc(jeIco[r.jenis]||'📝')+' '+esc(jeLbl[r.jenis]||'')+'</div></div>'+
+    '<div class="info-grid">'+
+    '<div class="ibox"><div class="ik">Guru</div><div class="iv">'+esc(S.profile?.nama||'–')+'</div></div>'+
+    '<div class="ibox"><div class="ik">Tarikh</div><div class="iv">'+fmtDate(r.tarikh)+'</div></div>'+
+    (r.waktu_mula?'<div class="ibox"><div class="ik">Masa</div><div class="iv">'+r.waktu_mula+(r.waktu_tamat?' – '+r.waktu_tamat:'')+'</div></div>':'')+
+    '</div>'+
+    '<div class="alert-box">⚠️ <strong>Sebab PDPc Tidak Dapat Dilaksanakan:</strong> '+esc(r.sebab)+'</div>'+
+    (r.tindakan&&r.tindakan!=='–'?'<div class="sect"><div class="sect-lbl">✅ Tindakan Yang Diambil</div><div class="sect-val">'+esc(r.tindakan)+'</div></div>':'')+
+    (r.catatan?'<div class="sect"><div class="sect-lbl">📝 Catatan</div><div class="sect-val">'+esc(r.catatan)+'</div></div>':'')+
+    '<div class="sect" style="background:#fef2f2;border-color:#fecaca"><div class="sect-lbl" style="color:#dc2626">⏸ Status RPH</div>'+
+    '<div class="sect-val">RPH kelas yang terjejas telah ditandakan <strong>Tangguh</strong> dan akan dijadualkan semula.</div></div>'+
+    '<div class="sign-row">'+
+    '<div class="sign-box"><div class="sign-line">'+esc(S.profile?.nama||'Guru')+'<br>Tandatangan Guru</div></div>'+
+    '<div class="sign-box"><div class="sign-line">Mohd Farimi bin Ab Rahman<br>Guru Besar SK Sokor</div></div>'+
+    '</div><div class="footer">GuruEase © 2026 SK Sokor &nbsp;|&nbsp; Dicetak: '+new Date().toLocaleString('ms-MY')+'</div>'+
+    '</div></body></html>';
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+function printProgram(r){
+  const imgs=(r.gambar||[]).map(b=>'<img src="'+b+'" style="width:100%;height:170px;object-fit:cover;border-radius:8px">').join('');
+  const fotoGrid=r.gambar?.length?'<div style="display:grid;grid-template-columns:repeat('+Math.min(r.gambar.length,3)+',1fr);gap:10px;margin-top:10px">'+imgs+'</div>':'';
+  const css='*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11px;color:#1e293b}'+
+    '.pg{padding:22px 26px;max-width:750px;margin:0 auto}'+
+    '.hdr{background:linear-gradient(135deg,#1d4ed8,#059669);color:#fff;border-radius:12px;padding:16px 20px;margin-bottom:16px;position:relative;overflow:hidden}'+
+    '.hdr::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.07)}'+
+    '.hdr-sch{font-size:9px;opacity:.75;letter-spacing:.5px;margin-bottom:4px}'+
+    '.hdr-title{font-size:17px;font-weight:900;line-height:1.2;margin-bottom:4px}'+
+    '.hdr-jenis{display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:10px;font-weight:600}'+
+    '.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}'+
+    '.meta-chip{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:6px 12px}'+
+    '.mcl{font-size:9px;color:#0369a1;font-weight:700;display:block}.mcv{font-size:11px;color:#0c4a6e;font-weight:600}'+
+    '.sect{background:#f8fafc;border-radius:10px;padding:11px 14px;margin-bottom:10px;border-left:4px solid #1d4ed8}'+
+    '.sect.impak{border-left-color:#059669;background:#f0fdf4}'+
+    '.sect-lbl{font-size:9px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}'+
+    '.sect.impak .sect-lbl{color:#059669}'+
+    '.sect-val{font-size:11px;line-height:1.7}'+
+    '.sign-row{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:22px}'+
+    '.sign-box{text-align:center}.sign-line{border-top:1px solid #94a3b8;margin-top:40px;padding-top:5px;font-size:10px;color:#64748b}'+
+    '.footer{text-align:center;font-size:8px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:14px}'+
+    '.no-print{margin-bottom:12px;display:flex;gap:8px}@media print{.no-print{display:none}}';
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Program</title><style>'+css+'</style></head><body><div class="pg">'+
+    '<div class="no-print"><button onclick="window.print()" style="background:linear-gradient(135deg,#1d4ed8,#059669);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer">🖨️ Cetak PDF</button>'+
+    '<button onclick="window.close()" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer">✕ Tutup</button></div>'+
+    '<div class="hdr"><div class="hdr-sch">SK SOKOR &nbsp;•&nbsp; JELI, KELANTAN &nbsp;•&nbsp; LAPORAN PROGRAM / AKTIVITI</div>'+
+    '<div class="hdr-title">'+esc(r.tajuk_program||r.sebab)+'</div>'+
+    '<span class="hdr-jenis">'+esc(r.jenis_program||'Program Sekolah')+'</span></div>'+
+    '<div class="meta-row">'+
+    '<div class="meta-chip"><span class="mcl">📅 Tarikh</span><span class="mcv">'+fmtDate(r.tarikh)+'</span></div>'+
+    '<div class="meta-chip"><span class="mcl">🕐 Masa</span><span class="mcv">'+(r.waktu_mula||'–')+(r.waktu_tamat?' – '+r.waktu_tamat:'')+'</span></div>'+
+    '<div class="meta-chip"><span class="mcl">📍 Tempat</span><span class="mcv">'+esc(r.tempat||'–')+'</span></div>'+
+    '<div class="meta-chip"><span class="mcl">👥 Peserta</span><span class="mcv">'+((r.bil_peserta||0)+' orang')+'</span></div>'+
+    '<div class="meta-chip"><span class="mcl">👤 Dilaporkan</span><span class="mcv">'+esc(S.profile?.nama||'–')+'</span></div>'+
+    '</div>'+
+    '<div class="sect"><div class="sect-lbl">📋 Aktiviti Yang Dijalankan</div><div class="sect-val">'+esc(r.aktiviti_program||r.tindakan||'–').replace(/\n/g,'<br>')+'</div></div>'+
+    '<div class="sect impak"><div class="sect-lbl">🌟 Impak / Pencapaian</div><div class="sect-val">'+esc(r.impak||'–').replace(/\n/g,'<br>')+'</div></div>'+
+    (r.catatan?'<div class="sect"><div class="sect-lbl">📝 Catatan</div><div class="sect-val">'+esc(r.catatan)+'</div></div>':'')+
+    (fotoGrid?'<div style="margin-top:12px"><div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📷 Dokumentasi</div>'+fotoGrid+'</div>':'')+
+    '<div class="sign-row">'+
+    '<div class="sign-box"><div class="sign-line">'+esc(S.profile?.nama||'–')+'<br>Pegawai Bertanggungjawab</div></div>'+
+    '<div class="sign-box"><div class="sign-line">Mohd Farimi bin Ab Rahman<br>Guru Besar SK Sokor</div></div>'+
+    '</div><div class="footer">GuruEase © 2026 SK Sokor &nbsp;|&nbsp; Dicetak: '+new Date().toLocaleString('ms-MY')+'</div>'+
+    '</div></body></html>';
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
 }
 
 // ── PBD MODULE ─────────────────────────────────────────────────
