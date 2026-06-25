@@ -402,6 +402,14 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
               <div><label class="lbl">Masa Mula</label><input type="time" id="rmm" class="inp" value="07:30"></div>
               <div><label class="lbl">Masa Tamat</label><input type="time" id="rmt" class="inp" value="08:00"></div>
             </div>
+            <div><label class="lbl">Mod Tulisan RPH</label>
+              <select id="rmod" class="inp">
+                <option value="bm">BM Rumi (Standard)</option>
+                <option value="en">English</option>
+                <option value="jawi">Jawi (جاوي)</option>
+                <option value="bm-arab">BM + Arab/Istilah Islam</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -877,8 +885,8 @@ function getWeekStart(d){const dt=new Date(d+'T00:00:00');const day=dt.getDay();
 function getWeekEnd(d){const dt=new Date(getWeekStart(d)+'T00:00:00');dt.setDate(dt.getDate()+4);return dt.toISOString().slice(0,10);}
 
 // ── SUBJECTS ───────────────────────────────────────────────────
-const SUBJEK_BAWAH=['Bahasa Melayu','Bahasa Inggeris','Matematik','Pendidikan Islam','j-QAF / Tasmik','Bahasa Arab','Pendidikan Jasmani','Pendidikan Kesihatan','Muzik','Pendidikan Seni Visual','Dunia Sains dan Teknologi'];
-const SUBJEK_ATAS=['Bahasa Melayu','Bahasa Inggeris','Matematik','Sains','Sejarah','Pendidikan Islam','j-QAF / Tasmik','Bahasa Arab','Pendidikan Jasmani','Pendidikan Kesihatan','Muzik','Pendidikan Seni Visual','Reka Bentuk dan Teknologi'];
+const SUBJEK_BAWAH=['Bahasa Melayu','Bahasa Inggeris','Matematik','Pendidikan Islam','j-QAF / Tasmik','Bahasa Arab','Pendidikan Jasmani','Pendidikan Kesihatan','Pendidikan Muzik','Pendidikan Seni Visual','Dunia Sains dan Teknologi'];
+const SUBJEK_ATAS=['Bahasa Melayu','Bahasa Inggeris','Matematik','Sains','Sejarah','Pendidikan Islam','j-QAF / Tasmik','Bahasa Arab','Pendidikan Jasmani','Pendidikan Kesihatan','Pendidikan Muzik','Pendidikan Seni Visual','Reka Bentuk dan Teknologi'];
 const PRASEKOLAH_BIDANG=['Bahasa dan Komunikasi (BM)','Bahasa dan Komunikasi (BI)','Kerohanian, Sikap dan Nilai','Perkembangan Kognitif','Fizikal dan Kesihatan','Kreativiti dan Estetika','Teknologi, Inovasi dan Kelestarian'];
 
 function getSubjekList(tahun){return tahun<=3?SUBJEK_BAWAH:SUBJEK_ATAS;}
@@ -1019,7 +1027,12 @@ function onKelasChange(){
   const badge=q('#ai-badge-txt');if(badge)badge.textContent=isPresekolahKelas(kId)?'🌱 Jana Automatik KP2026 Prasekolah':'✨ Jana Automatik DSKP';
   clearTimeout(_kelasTimer);_kelasTimer=setTimeout(()=>loadDSKPPicker(),180);
 }
-function onSubjekChange(){clearTimeout(_kelasTimer);_kelasTimer=setTimeout(()=>loadDSKPPicker(),180);}
+function onSubjekChange(){
+  clearTimeout(_kelasTimer);_kelasTimer=setTimeout(()=>loadDSKPPicker(),180);
+  const subj=q('#rs').value;const mod=q('#rmod');if(!mod)return;
+  const autoMod={'Bahasa Inggeris':'en','j-QAF / Tasmik':'jawi','Pendidikan Islam':'bm-arab','Bahasa Arab':'bm-arab'};
+  mod.value=autoMod[subj]||'bm';
+}
 function updateHari(){const t=q('#rt')?.value;if(!t)return;const d=new Date(t+'T00:00:00');if(q('#rh'))q('#rh').value=HARI_MY[d.getDay()]||'';}
 
 async function loadDSKPPicker(){
@@ -1073,17 +1086,42 @@ function janaRPH(){
   const hari=q('#rh').value||HARI_MY[new Date(tarikh+'T00:00:00').getDay()]||'';
   const autoTajuk=S.selSP[0].sp_tajuk.substring(0,80);const rtjVal=q('#rtj').value.trim();const tajuk=rtjVal&&!S.selSP.some(s=>s.sp_tajuk.startsWith(rtjVal.substring(0,20)))?rtjVal:autoTajuk;
   const obj=q('#rob').value.trim();
-  const aktiviti=buildAktiviti(subj,S.selSP,obj);
-  S.rphData={kelas_id:kId,subjek:subj,tarikh,masa_mula:mMula,masa_tamat:mTamat,tajuk,objektif:obj,aktiviti,guru_id:S.user.id,status:'draf'};
+  const mod=q('#rmod')?.value||'bm';const aktiviti=buildAktiviti(subj,S.selSP,obj,mod);
+  S.rphData={kelas_id:kId,subjek:subj,tarikh,masa_mula:mMula,masa_tamat:mTamat,tajuk,objektif:obj,aktiviti,mod:mod,guru_id:S.user.id,status:'draf'};
   renderRPHPreview(S.rphData,kelas,mMula,mTamat,hari);
   q('#prev-box').classList.remove('hidden');q('#jana-btn').classList.add('hidden');
   q('#prev-box').scrollIntoView({behavior:'smooth'});
 }
 
-function buildAktiviti(subj,spList,objTambahan){
+function buildAktiviti(subj,spList,objTambahan,mod='bm'){
   const sp0=spList[0];const spCodes=spList.map(s=>s.sp_kod).join(', ');
+  if(mod==='en'){
+    return[
+      {fasa:'Set Induction (5 minutes)',aktiviti:`Teacher conducts a quick review related to "${sp0.sp_kod}: ${sp0.sp_tajuk.substring(0,50)}". Brief Q&A to elicit prior knowledge from pupils.`,catatan:'Teaching aids: realia / pictures / slides / video clip'},
+      {fasa:'Step 1 – Presentation (15 minutes)',aktiviti:`Teacher explains the concept of ${sp0.sp_tajuk.substring(0,50)} clearly and systematically. Pupils listen, take notes and may ask questions.`,catatan:'Method: Lecture, demonstration, modelling, guided questioning'},
+      {fasa:'Step 2 – Practice / Activity (15 minutes)',aktiviti:`Pupils carry out group activities related to ${sp0.sp_tajuk.substring(0,50)}. Teacher monitors progress and guides pupils who need assistance.`,catatan:'Method: Cooperative Learning, Task-based, Hands-on, PBD'},
+      {fasa:'Closure (5 minutes)',aktiviti:`Teacher summarises the lesson with pupils. Pupils recall key points learned. Moral values are instilled through discussion.`,catatan:'Values: Cooperation, Responsibility, Respect, Honesty'}
+    ];
+  }
+  if(mod==='jawi'){
+    return[
+      {fasa:'ستيڤ ايندوقسي (٥ مينيت)',aktiviti:`ڬورو ممبوات تينجاوان ڤڠتاهوان سدييا اد موريد برقايتن دڠن "${sp0.sp_kod}: ${sp0.sp_tajuk.substring(0,40)}". سوال جواب ريڠقس اونتوق منچوڠكيل ايديا موريد.`,catatan:'BBM: باهن ماءوجود / ڬمبر / تاياڠن'},
+      {fasa:'لاڠكه ١ – ڤنرڠن (١٥ مينيت)',aktiviti:`ڬورو منرڠكن قونسيڤ ${sp0.sp_tajuk.substring(0,40)} دڠن جلس دان سيستمتيک. موريد مندڠر، منچاتت دان بوليه برتاءنيا سوالن برقايتن.`,catatan:'قأدة: كولياه، دمونستراسي، تونجوق چارا'},
+      {fasa:'لاڠكه ٢ – اقتيۏيتي (١٥ مينيت)',aktiviti:`موريد منجالنكن اقتيۏيتي بركومڤولن برقايتن ${sp0.sp_tajuk.substring(0,40)}. ڬورو مموانتو ڤركمباڠن دان ممبيمبيڠ موريد يڠ مملوكن بنتوان.`,catatan:'قأدة: ڤمبلاجرن كوءوڤراتيف، PBD، هاندس-اون'},
+      {fasa:'ڤنوتوڤ (٥ مينيت)',aktiviti:'ڬورو ممبوات روموسن ڤلاجرن برسام موريد. موريد مڽبوت سمولا ايسي ڤنتيڠ يڠ دڤلاجري. نيلاي مورني دسليتكن.',catatan:'نيلاي مورني: كرجاسام، برتاڠڬوڠجاواب، مڠهورمتي'}
+    ];
+  }
+  if(mod==='bm-arab'){
+    return[
+      {fasa:'Set Induksi (5 minit)',aktiviti:`Guru membuat tinjauan pengetahuan sedia ada murid berkaitan "${sp0.sp_kod} ${sp0.sp_tajuk.substring(0,40)}". Soal jawab ringkas. Guru memulakan dengan Basmallah dan doa bersama.`,catatan:'BBM: Bahan maujud / gambar / tayangan. Nilai: Taqwa, Adab'},
+      {fasa:'Langkah 1 – Penerangan (15 minit)',aktiviti:`Guru menerangkan konsep ${sp0.sp_tajuk.substring(0,50)} dengan jelas. Rujukan kepada al-Quran / Hadis berkaitan disertakan. Murid mendengar dan mencatat dengan penuh adab.`,catatan:'Kaedah: Kuliah, demonstrasi, tunjuk cara. Nilai: Iman, Ilmu'},
+      {fasa:'Langkah 2 – Aktiviti (15 minit)',aktiviti:`Murid menjalankan aktiviti berkumpulan berkaitan ${sp0.sp_tajuk.substring(0,50)}. Penerapan nilai-nilai Islam (Akhlak, Amanah, Ikhlas) dalam aktiviti. Guru memantau dan membimbing.`,catatan:'Kaedah: Pembelajaran Koperatif, PBD, Amali. Nilai: Amanah, Ikhlas'},
+      {fasa:'Penutup (5 minit)',aktiviti:'Guru membuat rumusan pelajaran. Murid menyebut semula isi penting. Guru menutup dengan doa / zikir ringkas. Nilai murni Islam diselitkan.',catatan:'Nilai: Syukur, Tawaduk, Bertanggungjawab kepada Allah dan Sesama'}
+    ];
+  }
+  // Default BM Rumi
   return[
-    {fasa:'Set Induksi (5 minit)',aktiviti:`Guru membuat tinjauan pengetahuan sedia ada murid berkaitan "${esc(sp0.sp_kod)} ${sp0.sp_tajuk.substring(0,40)}". Soal jawab ringkas untuk mencungkil idea murid.`,catatan:'BBM: Bahan maujud / gambar / tayangan'},
+    {fasa:'Set Induksi (5 minit)',aktiviti:`Guru membuat tinjauan pengetahuan sedia ada murid berkaitan "${sp0.sp_kod} ${sp0.sp_tajuk.substring(0,40)}". Soal jawab ringkas untuk mencungkil idea murid.`,catatan:'BBM: Bahan maujud / gambar / tayangan'},
     {fasa:'Langkah 1 – Penerangan (15 minit)',aktiviti:`Guru menerangkan konsep ${spCodes} dengan jelas dan sistematik. Murid mendengar, mencatat dan boleh bertanya soalan berkaitan.`,catatan:'Kaedah: Kuliah, demonstrasi, tunjuk cara'},
     {fasa:'Langkah 2 – Aktiviti (15 minit)',aktiviti:`Murid menjalankan aktiviti berkumpulan berkaitan ${sp0.sp_tajuk.substring(0,50)}. Guru memantau perkembangan dan membimbing murid yang memerlukan bantuan.`,catatan:'Kaedah: Pembelajaran Koperatif, PBD, Hands-on'},
     {fasa:'Penutup (5 minit)',aktiviti:'Guru membuat rumusan pelajaran bersama murid. Murid menyebut semula isi penting yang dipelajari. Refleksi nilai murni diselitkan.',catatan:'Nilai murni: Kerjasama, Bertanggungjawab, Menghormati'}
@@ -1095,8 +1133,9 @@ function renderRPHPreview(rph,kelas,mMula,mTamat,hari){
   q('#prev-klt').textContent=(kelas?.nama||'–')+' • '+hari+(mMula?` • ${mMula}–${mTamat}`:'');
   q('#prev-tj').textContent=rph.tajuk;q('#prev-ms').textContent=mMula&&mTamat?`${mMula} – ${mTamat}`:'–';
   q('#prev-sp').innerHTML=S.selSP.map(s=>`<span class="tag">${esc(s.sp_kod)} ${esc(s.sp_tajuk.substring(0,30))}</span>`).join('');
-  q('#prev-ak').innerHTML=rph.aktiviti.map(a=>`<div class="rph-ak"><h4>${esc(a.fasa)}</h4><p>${esc(a.aktiviti)}</p><p style="font-size:11px;color:var(--m);margin-top:3px">${esc(a.catatan)}</p></div>`).join('');
-  const ico={'Bahasa Melayu':'📚','Bahasa Inggeris':'🇬🇧','Matematik':'🔢','Sains':'🔬','Sejarah':'📜','Pendidikan Islam':'🕌','j-QAF / Tasmik':'📖','Bahasa Arab':'🌙','Muzik':'🎵','Pendidikan Seni Visual':'🎨','Pendidikan Jasmani':'⚽','Pendidikan Kesihatan':'❤️','Reka Bentuk dan Teknologi':'⚙️','Dunia Sains dan Teknologi':'🔭'};
+  const isJawi=S.rphData?.mod==='jawi'||rph.mod==='jawi';const rtlStyle=isJawi?'direction:rtl;text-align:right;font-family:"Traditional Arabic","Scheherazade New",Arial,sans-serif;':'';
+  q('#prev-ak').innerHTML=rph.aktiviti.map(a=>`<div class="rph-ak" style="${rtlStyle}"><h4>${esc(a.fasa)}</h4><p>${esc(a.aktiviti)}</p><p style="font-size:11px;color:var(--m);margin-top:3px">${esc(a.catatan)}</p></div>`).join('');
+  const ico={'Bahasa Melayu':'📚','Bahasa Inggeris':'🇬🇧','Matematik':'🔢','Sains':'🔬','Sejarah':'📜','Pendidikan Islam':'🕌','j-QAF / Tasmik':'📖','Bahasa Arab':'🌙','Pendidikan Muzik':'🎵','Pendidikan Seni Visual':'🎨','Pendidikan Jasmani':'⚽','Pendidikan Kesihatan':'❤️','Reka Bentuk dan Teknologi':'⚙️','Dunia Sains dan Teknologi':'🔭'};
   q('#prev-ico').textContent=ico[rph.subjek]||'📋';
 }
 
@@ -1158,12 +1197,30 @@ function showRPHDetailById(id){
     ${r.objektif?`<div class="irow"><span class="ik">Objektif</span><span class="iv">${esc(r.objektif)}</span></div>`:''}
     <hr class="dv">
     <p style="font-size:11px;font-weight:700;color:var(--m);margin-bottom:8px">LANGKAH PENGAJARAN</p>
-    ${acts.map(a=>`<div class="rph-ak"><h4>${esc(a.fasa||'')}</h4><p>${esc(a.aktiviti||'')}</p>${a.catatan?`<p style="font-size:11px;color:var(--m);margin-top:2px">${esc(a.catatan)}</p>`:''}</div>`).join('')}
+    ${(()=>{const isJ=r.mod==='jawi';const rS=isJ?'direction:rtl;text-align:right;font-family:\"Traditional Arabic\",\"Scheherazade New\",Arial,sans-serif;':'';return acts.map(a=>`<div class="rph-ak" style="${rS}"><h4>${esc(a.fasa||'')}</h4><p>${esc(a.aktiviti||'')}</p>${a.catatan?`<p style="font-size:11px;color:var(--m);margin-top:2px">${esc(a.catatan)}</p>`:''}</div>`).join('');})()}
+    ${(r.mod==='jawi'||r.mod==='en')?`<div style="margin-top:10px;text-align:center"><button class="btn" style="font-size:11px;padding:6px 14px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1" onclick="toggleRPHBMView(this,${JSON.stringify(r).replace(/'/g,\'')})">🔄 Lihat BM Rumi (Untuk GB)</button></div>`:''}
     ${r.refleksi?`<hr class="dv"><div class="irow"><span class="ik">Refleksi</span><span class="iv">${esc(r.refleksi)}</span></div>`:''}
     ${r.ulasan_gb?`<div class="sk-ulasan">💬 Ulasan GB: ${esc(r.ulasan_gb)}</div>`:''}`;
   q('#rphm').classList.remove('hidden');
 }
 function closeRPHModal(){q('#rphm').classList.add('hidden');S._curRPH=null;}
+function toggleRPHBMView(btn,r){
+  const acts=Array.isArray(r.aktiviti)?r.aktiviti:[];
+  const container=btn.closest('.rph-ak')?.parentElement||btn.parentElement.previousElementSibling;
+  const isShowing=btn.dataset.bmShown==='1';
+  if(isShowing){
+    btn.dataset.bmShown='0';btn.textContent='🔄 Lihat BM Rumi (Untuk GB)';
+    container.querySelectorAll('.bm-rumi-overlay').forEach(el=>el.remove());
+  } else {
+    btn.dataset.bmShown='1';btn.textContent='✖ Tutup BM Rumi';
+    const bmActs=acts.map(a=>{
+      const fasaBM={'Set Induction (5 minutes)':'Set Induksi (5 minit)','Step 1 – Presentation (15 minutes)':'Langkah 1 – Penerangan (15 minit)','Step 2 – Practice / Activity (15 minutes)':'Langkah 2 – Aktiviti (15 minit)','Closure (5 minutes)':'Penutup (5 minit)','ستيڤ ايندوقسي (٥ مينيت)':'Set Induksi (5 minit)','لاڠكه ١ – ڤنرڠن (١٥ مينيت)':'Langkah 1 – Penerangan (15 minit)','لاڠكه ٢ – اقتيۏيتي (١٥ مينيت)':'Langkah 2 – Aktiviti (15 minit)','ڤنوتوڤ (٥ مينيت)':'Penutup (5 minit)'};
+      const f=fasaBM[a.fasa]||a.fasa;
+      return `<div class="rph-ak bm-rumi-overlay" style="background:#fefce8;border-left:3px solid #eab308"><span style="font-size:9px;color:#854d0e;font-weight:700">BM RUMI</span><h4>${esc(f)}</h4><p style="font-size:11px;color:#713f12">${esc(a.aktiviti)}</p></div>`;
+    }).join('');
+    btn.insertAdjacentHTML('beforebegin',bmActs);
+  }
+}
 function cloneRPHById(id){const r=_rphCache.get(id||S._curRPH?.id);if(!r)return;closeRPHModal();showRPHForm();setTimeout(()=>{if(q('#rs'))q('#rs').value=r.subjek;if(q('#rtj'))q('#rtj').value=r.tajuk;if(q('#rob'))q('#rob').value=r.objektif||'';toast('RPH diklon — pilih tarikh baru.','inf');},100);}
 function printRPHById(id){
   const r=_rphCache.get(id||S._curRPH?.id);if(!r)return;
