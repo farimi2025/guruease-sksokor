@@ -2907,7 +2907,7 @@ const WAKTU_LABEL=['W1','W2','W3','W4','W5','W6','W7','W8'];
 let _jadualData={};// {hari_waktu: {kelas_id,subjek}}
 
 function openJadualModal(){
-  _jadualData=JSON.parse(S.profile?.jadual||'{}');
+  const _jRaw=S.profile?.jadual;_jadualData=(typeof _jRaw==='string')?JSON.parse(_jRaw||'{}'):(_jRaw||{});
   renderJadualGrid();
   q('#jadual-modal').classList.remove('hidden');
 }
@@ -2969,10 +2969,10 @@ async function simpanJadual(){
     }
   }
   hov('Menyimpan jadual...');
-  const{error}=await db.from('profiles').update({jadual:JSON.stringify(jadual)}).eq('id',S.user.id);
+  const{error}=await db.from('profiles').update({jadual}).eq('id',S.user.id);
   hov();
   if(error){toast('Gagal simpan: '+error.message,'err');return;}
-  S.profile.jadual=JSON.stringify(jadual);
+  S.profile.jadual=jadual;
   _jadualData=jadual;
   toast('Jadual waktu disimpan!','ok');
   closeJadualModal();
@@ -2984,7 +2984,7 @@ function getJadualKelasForDate(tarikh){
   const hari=d.getDay();// 0=Ahad,1=Isnin,...5=Jumaat
   if(hari<1||hari>5)return[];
   const h=hari;// 1=Isnin,...5=Jumaat
-  const jadual=JSON.parse(S.profile?.jadual||'{}');
+  const _jr=S.profile?.jadual;const jadual=(typeof _jr==='string')?JSON.parse(_jr||'{}'):(_jr||{});
   const result=[];
   for(let w=1;w<=8;w++){
     const key=h+'_'+w;
