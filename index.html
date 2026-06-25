@@ -440,7 +440,7 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
               <div id="prev-ak"></div>
             </div>
             <div style="display:flex;gap:10px">
-              <button class="btn bo" style="flex:1" onclick="q('#prev-box').classList.add('hidden');q('#jana-btn').classList.remove('hidden')">← Edit</button>
+              <button class="btn bo" style="flex:1" onclick="q('#prev-box').classList.add('hidden');q('#jana-btn').classList.remove('hidden');q('#rtj').value='';S.selSP=[];q('#dskp-picker').querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false)">← Edit</button>
               <button class="btn bg2" style="flex:2" onclick="saveRPH()">💾 Simpan e-RPH</button>
             </div>
           </div>
@@ -1071,7 +1071,7 @@ function janaRPH(){
   const kelas=S.kelas.find(k=>k.id===kId);
   const mMula=q('#rmm').value||'07:30';const mTamat=q('#rmt').value||'08:00';
   const hari=q('#rh').value||HARI_MY[new Date(tarikh+'T00:00:00').getDay()]||'';
-  const tajuk=q('#rtj').value.trim()||S.selSP[0].sp_tajuk.substring(0,60);
+  const autoTajuk=S.selSP[0].sp_tajuk.substring(0,80);const rtjVal=q('#rtj').value.trim();const tajuk=rtjVal&&!S.selSP.some(s=>s.sp_tajuk.startsWith(rtjVal.substring(0,20)))?rtjVal:autoTajuk;
   const obj=q('#rob').value.trim();
   const aktiviti=buildAktiviti(subj,S.selSP,obj);
   S.rphData={kelas_id:kId,subjek:subj,tarikh,masa_mula:mMula,masa_tamat:mTamat,tajuk,objektif:obj,aktiviti,guru_id:S.user.id,status:'draf'};
