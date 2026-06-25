@@ -328,6 +328,18 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
 /* :has() fallback — guna JS untuk tambah class ini */
 .sp-chip-checked{background:#f5f3ff;border-color:var(--pur)}
 .dark .sp-chip-checked{background:rgba(124,58,237,.2);border-color:#7c3aed}
+
+/* ── Modal Overlay ─────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1050;padding:12px}
+.modal-overlay.hidden{display:none}
+.modal-box{background:#fff;border-radius:14px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;max-height:90vh;display:flex;flex-direction:column}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#0369a1,#0891b2);color:#fff}
+.modal-hdr h3{margin:0;font-size:1rem}
+.modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.modal-close:hover{background:rgba(255,255,255,.35)}
+/* ── Modal (jadual waktu) ───────────────────────────────── */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1100;padding:12px}
+.modal.hidden{display:none}
 </style>
 </head>
 <body>
@@ -714,8 +726,6 @@ hr.dv{border:none;border-top:1px solid var(--b);margin:11px 0}
     </section>
 
     <!-- PBD -->
-    <section id="t-pbd" class="hidden">
-      <div class="tpills">
     <section id="t-pbd" class="hidden">
       <div class="tpills">
         <button class="tpill on" id="pbd-p1" onclick="showPBDRekod()">🎯 Rekod PBD</button>
@@ -3032,18 +3042,12 @@ document.addEventListener('keydown',e=>{
 });
 
 // ── INIT ───────────────────────────────────────────────────────
+// FIX: guna onAuthStateChange sahaja — elak race condition
 db.auth.onAuthStateChange((event,session)=>{
+  S.user=session?.user??null;
   if(S.user&&!_appShown){_appShown=true;initApp();}
   else if(!S.user&&!_loginShown){_loginShown=true;safeShowLogin();}
 });
-
-// Check existing session
-(async()=>{
-  const{data:{session}}=await db.auth.getSession();
-  S.user=session?.user??null;
-  if(S.user){_appShown=true;initApp();}
-  else{_loginShown=true;safeShowLogin();}
-})();
 </script>
 
 <!-- MODAL PENGURUSAN STAF -->
