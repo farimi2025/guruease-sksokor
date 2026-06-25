@@ -1053,7 +1053,7 @@ function safeShowLogin(){
   _loaded=false;_appShown=false;_loginShown=true;
   S.user=null;S.profile=null;S.kelas=[];S.murid=[];S.pbd={};
   S.mod={muridId:null,kelasId:null,subjek:null};S.dark=false;
-  S.rphData=null;S.selSP=[];S.pbdCtx=null;S._lgbData=null;S._laporanData=null;S._curRPH=null;
+  S.rphData=null;S.selSP=[];S.pbdCtx=null;S._lgbData=null;S._laporanData=null;S._laporanRows=null;S._curRPH=null;
   dskpCache={};_rphCache.clear();_oprCache.clear();_muridMap={};
   hov();q('#login').classList.remove('hidden');q('#app').classList.add('hidden');
 }
@@ -1446,35 +1446,123 @@ function toggleRPHBMView(btn){const r=S._curRPH;if(!r)return;
 function cloneRPHById(id){const r=_rphCache.get(id||S._curRPH?.id);if(!r)return;closeRPHModal();showRPHForm();setTimeout(()=>{if(q('#rs'))q('#rs').value=r.subjek;if(q('#rtj'))q('#rtj').value=r.tajuk;if(q('#rob'))q('#rob').value=r.objektif||'';toast('RPH diklon — pilih tarikh baru.','inf');},100);}
 function printRPHById(id){
   const r=_rphCache.get(id||S._curRPH?.id);if(!r)return;
-  const k=S.kelas.find(x=>x.id===r.kelas_id);const acts=Array.isArray(r.aktiviti)?r.aktiviti:[];
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>e-RPH</title>
-  <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:12px;padding:20px}
-  h1{font-size:15px;font-weight:bold;text-align:center}.info{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin:10px 0;font-size:11px}
-  .k{font-weight:600}.hr{border:none;border-top:1px solid #000;margin:8px 0}
-  .step{margin-bottom:8px;padding:6px;border:1px solid #ccc;border-radius:3px}
-  .step h4{font-size:11px;font-weight:bold;color:#1d4ed8}footer{text-align:center;font-size:10px;color:#666;margin-top:16px;padding-top:6px;border-top:1px solid #ccc}
-  @media print{button{display:none}}</style></head><body>
-  <h1>RANCANGAN PENGAJARAN HARIAN (e-RPH)</h1>
-  <p style="text-align:center;font-size:10px">SK Sokor, Tanah Merah, Kelantan (DBA5316)</p>
-  <div class="hr"></div>
-  <div class="info">
-    <div><span class="k">Guru:</span> ${esc(S.profile?.nama||'–')}</div>
-    <div><span class="k">Kelas:</span> ${esc(k?.nama||'–')}</div>
-    <div><span class="k">Mata Pelajaran:</span> ${esc(r.subjek)}</div>
-    <div><span class="k">Tarikh:</span> ${fmtDate(r.tarikh)} (${HARI_MY[new Date(r.tarikh+'T00:00:00').getDay()]||''})</div>
-    <div><span class="k">Masa:</span> ${r.masa_mula||'–'} – ${r.masa_tamat||'–'}</div>
-    <div><span class="k">Status:</span> ${r.status||'–'}</div>
-  </div>
-  <div class="hr"></div>
-  <p><span class="k">Tajuk:</span> ${esc(r.tajuk)}</p>
-  ${r.objektif?`<p style="margin-top:4px"><span class="k">Objektif:</span> ${esc(r.objektif)}</p>`:''}
-  <div class="hr"></div>
-  ${acts.map(a=>`<div class="step"><h4>${esc(a.fasa||'')}</h4><p>${esc(a.aktiviti||'')}</p>${a.catatan?`<p style="color:#555;font-size:10px">${esc(a.catatan)}</p>`:''}</div>`).join('')}
-  ${r.refleksi?`<div class="hr"></div><p><span class="k">Refleksi:</span> ${esc(r.refleksi)}</p>`:''}
-  <footer>GuruEase v2.0 © 2026 • Dicetak: ${new Date().toLocaleString('ms-MY')}</footer>
-  <script>window.onload=()=>window.print();<\/script></body></html>`);
-  w.document.close();
+  const k=S.kelas.find(x=>x.id===r.kelas_id);
+  const acts=Array.isArray(r.aktiviti)?r.aktiviti:[];
+  const hari=HARI_MY[new Date(r.tarikh+'T00:00:00').getDay()]||'';
+  // Subject colour theme
+  const subjectColor={
+    'Bahasa Melayu':'#1d4ed8','Bahasa Inggeris':'#047857','Matematik':'#d97706',
+    'Pendidikan Islam':'#6d28d9','j-QAF / Tasmik':'#7c3aed','Bahasa Arab':'#0369a1',
+    'Sains':'#0891b2','Sejarah':'#92400e','Pendidikan Jasmani':'#15803d',
+    'Pendidikan Kesihatan':'#dc2626','Pendidikan Muzik':'#db2777',
+    'Pendidikan Seni Visual':'#7c3aed','Reka Bentuk dan Teknologi':'#374151',
+    'Dunia Sains dan Teknologi':'#0369a1'
+  };
+  const subjectIco={
+    'Bahasa Melayu':'📚','Bahasa Inggeris':'🇬🇧','Matematik':'🔢','Pendidikan Islam':'🕌',
+    'j-QAF / Tasmik':'📖','Bahasa Arab':'🌙','Sains':'🔬','Sejarah':'📜',
+    'Pendidikan Jasmani':'⚽','Pendidikan Kesihatan':'❤️','Pendidikan Muzik':'🎵',
+    'Pendidikan Seni Visual':'🎨','Reka Bentuk dan Teknologi':'⚙️','Dunia Sains dan Teknologi':'🔭'
+  };
+  const fasaColor={'Set Induksi':'#f59e0b','Perkembangan':'#3b82f6','Penutup':'#10b981','Penilaian':'#8b5cf6'};
+  const clr=subjectColor[r.subjek]||'#1d4ed8';
+  const ico=subjectIco[r.subjek]||'📋';
+  const statusBg=r.status==='selesai'?'#d1fae5':r.status==='tangguh'?'#fef9c3':'#dbeafe';
+  const statusClr=r.status==='selesai'?'#059669':r.status==='tangguh'?'#d97706':'#1d4ed8';
+  const isRTL=r.mod==='jawi';
+  const rtlAttr=isRTL?'dir="rtl"':'';
+  const css='*{margin:0;padding:0;box-sizing:border-box}'+
+    'body{font-family:Arial,sans-serif;font-size:11px;color:#1e293b;background:#f8fafc;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+    '.pg{max-width:760px;margin:0 auto;background:#fff;min-height:100vh}'+
+    '.hdr{background:'+clr+';color:#fff;padding:16px 22px;position:relative;overflow:hidden}'+
+    '.hdr::before{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.08)}'+
+    '.hdr::after{content:"";position:absolute;left:-20px;bottom:-30px;width:100px;height:100px;border-radius:50%;background:rgba(0,0,0,.06)}'+
+    '.hdr-sch{font-size:8px;opacity:.75;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}'+
+    '.hdr-title{font-size:9px;font-weight:700;opacity:.85;letter-spacing:.3px;margin-bottom:6px}'+
+    '.hdr-subj{font-size:18px;font-weight:900;letter-spacing:-.2px;line-height:1.1}'+
+    '.hdr-ico{position:absolute;right:22px;top:14px;font-size:36px;opacity:.3}'+
+    '.content{padding:16px 22px}'+
+    '.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}'+
+    '.ibox{background:#f8fafc;border-radius:8px;padding:9px 12px;border-left:3px solid '+clr+'}'+
+    '.ibox.full{grid-column:1/-1}'+
+    '.ik{font-size:8px;font-weight:700;color:'+clr+';text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}'+
+    '.iv{font-size:12px;font-weight:600;color:#1e293b}'+
+    '.status-chip{display:inline-block;background:'+statusBg+';color:'+statusClr+';border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700}'+
+    '.obj-box{background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:#0c4a6e;line-height:1.6}'+
+    '.obj-lbl{font-size:8px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}'+
+    '.step-lbl{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px}'+
+    '.step{border-radius:10px;padding:11px 14px;margin-bottom:8px;border-left:4px solid #cbd5e1;background:#f8fafc;page-break-inside:avoid}'+
+    '.step.si{border-left-color:#f59e0b;background:#fffbeb}'+
+    '.step.pk{border-left-color:#3b82f6;background:#eff6ff}'+
+    '.step.pt{border-left-color:#10b981;background:#f0fdf4}'+
+    '.step.pn{border-left-color:#8b5cf6;background:#faf5ff}'+
+    '.step-fasa{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;color:#64748b}'+
+    '.step.si .step-fasa{color:#d97706}'+
+    '.step.pk .step-fasa{color:#2563eb}'+
+    '.step.pt .step-fasa{color:#059669}'+
+    '.step.pn .step-fasa{color:#7c3aed}'+
+    '.step-act{font-size:11px;line-height:1.7;color:#1e293b}'+
+    '.step-note{font-size:9px;color:#64748b;margin-top:4px;padding-top:4px;border-top:1px dashed #e2e8f0}'+
+    '.refleksi-box{background:#faf5ff;border:1px solid #e9d5ff;border-radius:10px;padding:11px 14px;margin-top:14px}'+
+    '.refleksi-lbl{font-size:8px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}'+
+    '.sign-row{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:22px;padding-top:14px;border-top:1px solid #e2e8f0}'+
+    '.sign-box{text-align:center}'+
+    '.sign-line{border-top:1px solid #94a3b8;margin-top:40px;padding-top:5px;font-size:9px;color:#64748b}'+
+    '.footer{background:'+clr+';color:rgba(255,255,255,.7);text-align:center;font-size:8px;padding:8px;margin-top:14px}'+
+    '.no-print{padding:10px 22px;background:#f1f5f9;display:flex;gap:8px}'+
+    '@media print{.no-print{display:none}body{background:#fff}.pg{max-width:none}}';
+  // Build fasa class
+  function fCls(fasa){
+    const f=(fasa||'').toLowerCase();
+    if(f.includes('induksi'))return 'si';
+    if(f.includes('perkembangan')||f.includes('perkembangan'))return 'pk';
+    if(f.includes('penutup'))return 'pt';
+    if(f.includes('penilai'))return 'pn';
+    return '';
+  }
+  const stepsHtml=acts.map(a=>{
+    const cls='step '+fCls(a.fasa);
+    const dir=isRTL?'dir="rtl"':'';
+    return '<div class="'+cls+'" '+dir+'>'+
+      '<div class="step-fasa">'+esc(a.fasa||'')+'</div>'+
+      '<div class="step-act">'+esc(a.aktiviti||'').replace(/\n/g,'<br>')+'</div>'+
+      (a.catatan?'<div class="step-note">📌 '+esc(a.catatan)+'</div>':'')+
+      '</div>';
+  }).join('');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>e-RPH — '+esc(r.subjek)+'</title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<div class="pg">'+
+    '<div class="no-print">'+
+    '<button onclick="window.print()" style="background:'+clr+';color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer">🖨️ Cetak / Simpan PDF</button>'+
+    '<button onclick="window.close()" style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer">✕ Tutup</button>'+
+    '</div>'+
+    '<div class="hdr">'+
+    '<div class="hdr-sch">SK Sokor &nbsp;•&nbsp; Jeli, Kelantan &nbsp;•&nbsp; DBA5316</div>'+
+    '<div class="hdr-title">RANCANGAN PENGAJARAN HARIAN (e-RPH)</div>'+
+    '<div class="hdr-subj">'+esc(r.subjek)+'</div>'+
+    '<div class="hdr-ico">'+ico+'</div>'+
+    '</div>'+
+    '<div class="content">'+
+    '<div class="info-grid">'+
+    '<div class="ibox"><div class="ik">Guru</div><div class="iv">'+esc(S.profile?.nama||'–')+'</div></div>'+
+    '<div class="ibox"><div class="ik">Kelas</div><div class="iv">'+esc(k?.nama||'–')+'</div></div>'+
+    '<div class="ibox"><div class="ik">Tarikh</div><div class="iv">'+fmtDate(r.tarikh)+' &nbsp;<span style="font-size:10px;color:#64748b">('+hari+')</span></div></div>'+
+    '<div class="ibox"><div class="ik">Masa</div><div class="iv">'+(r.masa_mula||'–')+' – '+(r.masa_tamat||'–')+'</div></div>'+
+    '<div class="ibox full"><div class="ik">Tajuk Pelajaran</div><div class="iv" style="font-size:14px">'+esc(r.tajuk||'–')+'</div></div>'+
+    '<div class="ibox"><div class="ik">Status</div><div class="iv"><span class="status-chip">'+esc(r.status||'draf')+'</span></div></div>'+
+    (r.mod&&r.mod!=='bm'?'<div class="ibox"><div class="ik">Mod Tulisan</div><div class="iv">'+esc(r.mod)+'</div></div>':'')+
+    '</div>'+
+    (r.objektif?'<div class="obj-box"><div class="obj-lbl">🎯 Objektif Pembelajaran</div>'+esc(r.objektif).replace(/\n/g,'<br>')+'</div>':'')+
+    '<div class="step-lbl">⚙️ Langkah Pengajaran &amp; Pembelajaran</div>'+
+    stepsHtml+
+    (r.refleksi?'<div class="refleksi-box"><div class="refleksi-lbl">🪞 Refleksi Pengajaran</div>'+esc(r.refleksi)+'</div>':'')+
+    '<div class="sign-row">'+
+    '<div class="sign-box"><div class="sign-line">'+esc(S.profile?.nama||'Guru')+'<br>Tandatangan Guru</div></div>'+
+    '<div class="sign-box"><div class="sign-line">Mohd Farimi bin Ab Rahman<br>Guru Besar SK Sokor</div></div>'+
+    '</div></div>'+
+    '<div class="footer">GuruEase © 2026 &nbsp;•&nbsp; SK Sokor, Jeli, Kelantan &nbsp;•&nbsp; Dicetak: '+new Date().toLocaleString('ms-MY')+'</div>'+
+    '</div></body></html>';
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
 }
 function goToPBDFromRPH(){
   if(!S._curRPH)return;const r=S._curRPH;
@@ -1502,7 +1590,7 @@ function toggleSebabLain(){q('#opr-lain-div').classList.toggle('hidden',q('#opr-
 let _oprJenis='guru';
 function setOPRJenis(j){
   _oprJenis=j;
-  ['guru','prog','murid','luar'].forEach(t=>{
+  ['guru','program','murid','luar'].forEach(t=>{
     q('#ojenis-'+t)?.classList.toggle('active',t===j);
     q('#opr-det-'+t)?.classList.toggle('hidden',t!==j);
   });
@@ -1851,24 +1939,117 @@ async function loadLaporanPBD(){
     <table class="lap-tbl"><thead><tr><th>#</th><th>Nama Murid</th><th>Jantina</th><th>TP</th></tr></thead><tbody>
     ${murid.map((m,i)=>{const b=latestMap[m.id]||0;return`<tr><td>${i+1}</td><td>${esc(m.nama)}</td><td>${m.jantina==='L'?'L':'P'}</td><td><span class="tp-badge" style="background:${tpColors[b]||'#f1f5f9'};color:${['#64748b','#dc2626','#c2410c','#a16207','#16a34a','#059669','#0e7490'][b]||'#64748b'}">${b||'–'}</span></td></tr>`;}).join('')}
     </tbody></table></div>`;
+  S._laporanRows=murid.map(m=>({nama:m.nama,band:latestMap[m.id]||0,tindakan:((latestMap[m.id]||0)<3)?'Pemulihan & bimbingan':((latestMap[m.id]||0)<5)?'Pengukuhan':'Pengayaan'}));
   S._laporanData=html;q('#lap-out').innerHTML=html;
 }
 function onLaporanKelasChange(){const kId=q('#lk').value;const tahun=getKelasYear(kId);updateSubjekSel('ls',tahun,kId);}
 function printLaporanPBD(){
   if(!S._laporanData){toast('Jana laporan dahulu.','err');return;}
-  const kId=q('#lk').value;const subj=q('#ls').value;const kNama=S.kelas.find(x=>x.id===kId)?.nama||'–';
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan PBD</title>
-  <style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}h1{font-size:14px;font-weight:bold;text-align:center}
-  table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1d4ed8;color:#fff;padding:5px 8px;text-align:left}
-  td{padding:5px 8px;border-bottom:1px solid #ddd}tr:nth-child(even)td{background:#f8f9fa}
-  footer{text-align:center;font-size:10px;color:#666;margin-top:12px}@media print{button{display:none}}</style></head><body>
-  <h1>LAPORAN TAHAP PENGUASAAN MURID (PBD)</h1>
-  <p style="text-align:center;font-size:11px">${esc(kNama)} • ${esc(subj)} • SK Sokor</p>
-  ${S._laporanData}
-  <footer>GuruEase v2.0 © 2026 • Dicetak: ${new Date().toLocaleString('ms-MY')}</footer>
-  <script>window.onload=()=>window.print();<\/script></body></html>`);
-  w.document.close();
+  const kId=q('#lk').value;const subj=q('#ls').value;
+  const kNama=S.kelas.find(x=>x.id===kId)?.nama||'–';
+  const d1=q('#ld1').value;const d2=q('#ld2').value;
+  // Band colour map
+  const bandClr={1:'#dc2626',2:'#ea580c',3:'#d97706',4:'#16a34a',5:'#0891b2',6:'#6d28d9'};
+  const bandLabel={1:'TP 1',2:'TP 2',3:'TP 3',4:'TP 4',5:'TP 5',6:'TP 6'};
+  const bandDesc={1:'Tahu',2:'Faham',3:'Boleh Buat',4:'Boleh Buat Dengan Teliti',5:'Boleh Buat Dengan Beradab',6:'Mithali'};
+  const css='*{margin:0;padding:0;box-sizing:border-box}'+
+    'body{font-family:Arial,sans-serif;font-size:11px;color:#1e293b;background:#f8fafc;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+    '.pg{max-width:800px;margin:0 auto;background:#fff;min-height:100vh}'+
+    '.hdr{background:linear-gradient(135deg,#15803d,#0369a1);color:#fff;padding:16px 22px;position:relative;overflow:hidden}'+
+    '.hdr::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.07)}'+
+    '.hdr-sch{font-size:8px;opacity:.75;letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}'+
+    '.hdr-title{font-size:9px;font-weight:700;opacity:.85;margin-bottom:5px}'+
+    '.hdr-subj{font-size:17px;font-weight:900}'+
+    '.hdr-meta{font-size:10px;opacity:.8;margin-top:4px}'+
+    '.content{padding:16px 22px}'+
+    '.stat-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}'+
+    '.stat-box{flex:1;min-width:70px;background:#f8fafc;border-radius:10px;padding:10px 12px;text-align:center;border-top:3px solid #e2e8f0}'+
+    '.stat-num{font-size:20px;font-weight:800;line-height:1}'+
+    '.stat-lbl{font-size:8px;color:#64748b;margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}'+
+    '.band-summary{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:16px}'+
+    '.band-box{border-radius:10px;padding:10px 6px;text-align:center;color:#fff}'+
+    '.band-num{font-size:20px;font-weight:900;line-height:1}'+
+    '.band-lbl{font-size:8px;font-weight:700;margin-top:2px;opacity:.9}'+
+    '.band-desc{font-size:7px;opacity:.8;margin-top:1px}'+
+    '.sect-lbl{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;display:flex;align-items:center;gap:6px}'+
+    '.sect-lbl::after{content:"";flex:1;height:1px;background:#e2e8f0}'+
+    'table{width:100%;border-collapse:collapse;font-size:10px}'+
+    'thead th{background:#1e293b;color:#fff;padding:7px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.3px}'+
+    'thead th:first-child{border-radius:8px 0 0 0}thead th:last-child{border-radius:0 8px 0 0}'+
+    'tbody tr:nth-child(even){background:#f8fafc}'+
+    'tbody tr:hover{background:#f0f9ff}'+
+    'td{padding:6px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}'+
+    '.band-chip{display:inline-block;border-radius:20px;padding:2px 9px;font-size:9px;font-weight:700;color:#fff}'+
+    '.bar-wrap{background:#f1f5f9;border-radius:20px;height:8px;overflow:hidden;min-width:60px}'+
+    '.bar-fill{height:100%;border-radius:20px}'+
+    '.sign-row{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:22px;padding-top:14px;border-top:1px solid #e2e8f0}'+
+    '.sign-box{text-align:center}'+
+    '.sign-line{border-top:1px solid #94a3b8;margin-top:40px;padding-top:5px;font-size:9px;color:#64748b}'+
+    '.footer{background:#1e293b;color:rgba(255,255,255,.6);text-align:center;font-size:8px;padding:8px;margin-top:14px}'+
+    '.no-print{padding:10px 22px;background:#f1f5f9;display:flex;gap:8px}'+
+    '@media print{.no-print{display:none}body{background:#fff}}';
+  // Parse S._laporanData — it's HTML; extract from DOM instead via a separate table
+  // Re-query from loaded laporan data stored in S._laporanRows
+  const rows=S._laporanRows||[];
+  const total=rows.length;
+  const bandCounts={1:0,2:0,3:0,4:0,5:0,6:0};
+  rows.forEach(r=>{const b=parseInt(r.band||0);if(b>=1&&b<=6)bandCounts[b]++;});
+  const avgBand=total>0?Math.round(rows.reduce((s,r)=>s+(parseInt(r.band||0)),0)/total*10)/10:0;
+  const tableRows=rows.map((m,i)=>{
+    const b=parseInt(m.band||0);
+    const clr=bandClr[b]||'#94a3b8';
+    const pct=b?(b/6*100):0;
+    return '<tr>'+
+      '<td style="font-weight:600;color:#64748b;text-align:center">'+(i+1)+'</td>'+
+      '<td style="font-weight:600">'+esc(m.nama||'–')+'</td>'+
+      '<td style="text-align:center"><span class="band-chip" style="background:'+clr+'">TP '+b+'</span></td>'+
+      '<td>'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+      '<div class="bar-wrap" style="flex:1"><div class="bar-fill" style="width:'+pct+'%;background:'+clr+'"></div></div>'+
+      '<span style="font-size:9px;color:'+clr+';font-weight:700;min-width:24px">'+b+'/6</span>'+
+      '</div></td>'+
+      '<td style="font-size:9px;color:#64748b">'+esc(m.tindakan||'–')+'</td>'+
+      '</tr>';
+  }).join('');
+  const bandSumHtml=[1,2,3,4,5,6].map(b=>
+    '<div class="band-box" style="background:'+bandClr[b]+'">'+
+    '<div class="band-num">'+bandCounts[b]+'</div>'+
+    '<div class="band-lbl">'+bandLabel[b]+'</div>'+
+    '<div class="band-desc">'+bandDesc[b]+'</div>'+
+    '</div>'
+  ).join('');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan PBD</title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<div class="pg">'+
+    '<div class="no-print">'+
+    '<button onclick="window.print()" style="background:linear-gradient(135deg,#15803d,#0369a1);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer">🖨️ Cetak / Simpan PDF</button>'+
+    '<button onclick="window.close()" style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer">✕ Tutup</button>'+
+    '</div>'+
+    '<div class="hdr">'+
+    '<div class="hdr-sch">SK Sokor &nbsp;•&nbsp; Jeli, Kelantan &nbsp;•&nbsp; Pentaksiran Bilik Darjah</div>'+
+    '<div class="hdr-title">LAPORAN TAHAP PENGUASAAN MURID (PBD)</div>'+
+    '<div class="hdr-subj">'+esc(subj)+'</div>'+
+    '<div class="hdr-meta">'+esc(kNama)+'&nbsp;•&nbsp;'+(d1?fmtDate(d1):'')+' – '+(d2?fmtDate(d2):'')+'</div>'+
+    '</div>'+
+    '<div class="content">'+
+    '<div class="stat-row">'+
+    '<div class="stat-box" style="border-top-color:#1d4ed8"><div class="stat-num" style="color:#1d4ed8">'+total+'</div><div class="stat-lbl">Jumlah Murid</div></div>'+
+    '<div class="stat-box" style="border-top-color:#059669"><div class="stat-num" style="color:#059669">'+avgBand+'</div><div class="stat-lbl">Purata TP</div></div>'+
+    '<div class="stat-box" style="border-top-color:#d97706"><div class="stat-num" style="color:#d97706">'+(bandCounts[5]+bandCounts[6])+'</div><div class="stat-lbl">TP 5 & 6</div></div>'+
+    '<div class="stat-box" style="border-top-color:#dc2626"><div class="stat-num" style="color:#dc2626">'+(bandCounts[1]+bandCounts[2])+'</div><div class="stat-lbl">TP 1 & 2</div></div>'+
+    '</div>'+
+    '<div class="sect-lbl">📊 Taburan Tahap Penguasaan</div>'+
+    '<div class="band-summary">'+bandSumHtml+'</div>'+
+    '<div class="sect-lbl">📋 Senarai Murid</div>'+
+    '<table><thead><tr><th style="width:32px">#</th><th>Nama Murid</th><th style="width:70px;text-align:center">Tahap</th><th style="width:180px">Pencapaian</th><th>Tindakan Susulan</th></tr></thead>'+
+    '<tbody>'+tableRows+'</tbody></table>'+
+    '<div class="sign-row">'+
+    '<div class="sign-box"><div class="sign-line">'+esc(S.profile?.nama||'Guru')+'<br>Guru Mata Pelajaran</div></div>'+
+    '<div class="sign-box"><div class="sign-line">Mohd Farimi bin Ab Rahman<br>Guru Besar SK Sokor</div></div>'+
+    '</div></div>'+
+    '<div class="footer">GuruEase © 2026 &nbsp;•&nbsp; SK Sokor, Jeli, Kelantan &nbsp;•&nbsp; Dicetak: '+new Date().toLocaleString('ms-MY')+'</div>'+
+    '</div></body></html>';
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
 }
 
 // ── MURID MODULE ───────────────────────────────────────────────
