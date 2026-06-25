@@ -1347,20 +1347,22 @@ function closeModal(){q('#bm').classList.add('hidden');_pbdMuridId=null;}
 
 async function selectBand(band){
   if(!_pbdMuridId)return;
+  const muridId=_pbdMuridId; // simpan dulu sebelum closeModal() set null
   const kId=q('#pk').value;const subj=q('#ps').value;const today=todayStr();
   // Update UI immediately
-  if(band>0)S.pbd[_pbdMuridId]=band;else delete S.pbd[_pbdMuridId];
-  closeModal();
+  if(band>0)S.pbd[muridId]=band;else delete S.pbd[muridId];
+  _pbdMuridId=null;closeModal();
   const{data:murid}=await db.from('murid').select('*').eq('kelas_id',kId).eq('aktif',true).order('nama');
   renderMuridPBD(murid,S.pbd);
   const done=Object.keys(S.pbd).filter(k=>S.murid.find(m=>m.id===k)).length;
   q('#psc').textContent=`${done}/${S.murid.length} murid`;
-  // Save to Supabase
-  const{data:existing}=await db.from('pbd').select('id').eq('guru_id',S.user.id).eq('murid_id',_pbdMuridId||'').eq('kelas_id',kId).eq('subjek',subj).eq('tarikh',today).limit(1);
-  if(band===0){if(existing?.[0])await db.from('pbd').delete().eq('id',existing[0].id);}
-  else if(existing?.[0])await db.from('pbd').update({band}).eq('id',existing[0].id);
-  else await db.from('pbd').insert({guru_id:S.user.id,murid_id:_pbdMuridId,kelas_id:kId,subjek:subj,band,tarikh:today});
-  _pbdMuridId=null;
+  // Save to Supabase — guna muridId (local), bukan _pbdMuridId (dah null)
+  const{data:existing,error:eErr}=await db.from('pbd').select('id').eq('guru_id',S.user.id).eq('murid_id',muridId).eq('kelas_id',kId).eq('subjek',subj).eq('tarikh',today).limit(1);
+  let saveErr=null;
+  if(band===0){if(existing?.[0]){const{error}=await db.from('pbd').delete().eq('id',existing[0].id);saveErr=error;}}
+  else if(existing?.[0]){const{error}=await db.from('pbd').update({band}).eq('id',existing[0].id);saveErr=error;}
+  else{const{error}=await db.from('pbd').insert({guru_id:S.user.id,murid_id:muridId,kelas_id:kId,subjek:subj,band,tarikh:today});saveErr=error;}
+  if(saveErr)toast('Gagal simpan PBD: '+saveErr.message,'err');
 }
 
 async function loadLaporanPBD(){
@@ -1755,16 +1757,4 @@ document.addEventListener('keydown',e=>{
 db.auth.onAuthStateChange((event,session)=>{
   S.user=session?.user??null;
   if(S.user&&!_appShown){_appShown=true;initApp();}
-  else if(!S.user&&!_loginShown){_loginShown=true;safeShowLogin();}
-});
-
-// Check existing session
-(async()=>{
-  const{data:{session}}=await db.auth.getSession();
-  S.user=session?.user??null;
-  if(S.user){_appShown=true;initApp();}
-  else{_loginShown=true;safeShowLogin();}
-})();
-</script>
-</body>
-</html>
+  else if(!S.user&&!
