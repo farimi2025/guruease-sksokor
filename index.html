@@ -1009,7 +1009,7 @@ function renderKelasList(){
 }
 
 // ── RPH FORM ───────────────────────────────────────────────────
-function showRPHForm(){q('#rfs').classList.remove('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>{q('#'+id)?.classList.remove('on');});q('#pf')?.classList.add('on');}
+function showRPHForm(){q('#rfs').classList.remove('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>{q('#'+id)?.classList.remove('on');});q('#pf')?.classList.add('on');q('#jana-btn').classList.remove('hidden');q('#prev-box').classList.add('hidden');document.querySelectorAll('.rph-saved-box').forEach(el=>el.remove());}
 function showRPHList(){q('#rfs').classList.add('hidden');q('#rls').classList.remove('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#pl')?.classList.add('on');loadRPHList();}
 function showRPT(){q('#rfs').classList.add('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.remove('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#pr')?.classList.add('on');}
 function showOPR(){q('#rfs').classList.add('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.remove('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#po')?.classList.add('on');showOPRForm();}
