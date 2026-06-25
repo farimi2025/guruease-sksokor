@@ -1198,7 +1198,7 @@ function renderKelasList(){
 // ── RPH FORM ───────────────────────────────────────────────────
 function showRPHForm(){q('#rfs').classList.remove('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>{q('#'+id)?.classList.remove('on');});q('#pf')?.classList.add('on');q('#jana-btn').classList.remove('hidden');q('#prev-box').classList.add('hidden');q('#ws-dskp').classList.remove('hidden');document.querySelectorAll('.rph-saved-box').forEach(el=>el.remove());_editRPHId=null;}
 function showRPHList(){q('#rfs').classList.add('hidden');q('#rls').classList.remove('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#pl')?.classList.add('on');loadRPHList();}
-function showRPT(){q('#rfs').classList.add('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.remove('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#pr')?.classList.add('on');}
+function showRPT(){q('#rfs').classList.add('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.remove('hidden');q('#opr-sec').classList.add('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#pr')?.classList.add('on');if(q('#rpt-kelas')?.value&&q('#rpt-subj')?.value)semakRPT();}
 function showOPR(){q('#rfs').classList.add('hidden');q('#rls').classList.add('hidden');q('#rpt-sec').classList.add('hidden');q('#opr-sec').classList.remove('hidden');['pf','pl','pr','po'].forEach(id=>q('#'+id)?.classList.remove('on'));q('#po')?.classList.add('on');showOPRForm();}
 
 function onKelasChange(){
@@ -1248,9 +1248,11 @@ function onSPChange(cb){
 
 async function loadRPTHint(kId,subj){
   const today=todayStr();
-  const{data}=await db.from('rpt').select('tajuk,minggu').eq('kelas_id',kId).eq('subjek',subj).lte('tarikh_mula',today).gte('tarikh_tamat',today).limit(1);
   const hint=q('#rpt-hint');
-  if(data?.[0]){hint?.classList.remove('hidden');if(q('#rpt-hint-text'))q('#rpt-hint-text').textContent=`Minggu ${data[0].minggu} — ${data[0].tajuk}`;}
+  const{data:master}=await db.from('rpt_master').select('id').eq('kelas_id',kId).eq('subjek',subj).eq('tahun',2026).maybeSingle();
+  if(!master?.id){hint?.classList.add('hidden');return;}
+  const{data}=await db.from('rpt_minggu').select('tajuk,minggu_ke').eq('rpt_id',master.id).lte('tarikh_mula',today).gte('tarikh_akhir',today).limit(1);
+  if(data?.[0]){hint?.classList.remove('hidden');if(q('#rpt-hint-text'))q('#rpt-hint-text').textContent='Minggu '+data[0].minggu_ke+' — '+data[0].tajuk;}
   else hint?.classList.add('hidden');
 }
 
@@ -2290,6 +2292,7 @@ async function doJanaRPT(semula=false){
   const kId=q('#rpt-kelas').value;const subj=q('#rpt-subj').value;
   if(!kId){toast('Pilih kelas.','err');return;}
   if(!subj){toast('Pilih mata pelajaran.','err');return;}
+  if(isPresekolahKelas(kId)){toast('RPT automatik tidak disokong untuk Prasekolah. Guna panduan KP2026.','err',5000);return;}
   if(semula&&!confirm('Jana semula RPT?\n\nData sedia ada akan digantikan. Sebarang perubahan manual akan hilang.'))return;
   hov('Fasa 1: Memuatkan DSKP & Takwim...');
   const tahun=getKelasYear(kId);
